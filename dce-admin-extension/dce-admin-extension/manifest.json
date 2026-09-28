@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "DCE Assistant (Admin Studio)",
+  "version": "5.1.0",
+  "description": "Macro workflow recorder, step studio, SOP v5.1 master preset exporter, and live team presence QA dashboard for DEL CRM, AltDesk, Telviva, and any web platform.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "tabs",
+    "clipboardWrite"
+  ],
+  "storage": {
+    "managed_schema": "managed_schema.json"
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "action": {
+    "default_title": "Open DCE Assistant (Admin Studio)"
+  },
+  "side_panel": {
+    "default_path": "panel/panel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": ["scripts/content_script.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["presets.json"],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "DCE Floor Supervisor Console",
+  "version": "1.0.0",
+  "description": "Standalone Team Leader & Floor Supervisor Console for real-time agent presence, AUX timers, stuck-field alerts, TL nudges, and floor AHT telemetry.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "tabs",
+    "sidePanel"
+  ],
+  "storage": {
+    "managed_schema": "managed_schema.json"
+  },
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_title": "DCE Supervisor Console",
+    "default_popup": "panel/panel.html"
+  },
+  "side_panel": {
+    "default_path": "panel/panel.html"
+  },
+  "background": {
+    "service_worker": "scripts/background.js"
+  }
+}

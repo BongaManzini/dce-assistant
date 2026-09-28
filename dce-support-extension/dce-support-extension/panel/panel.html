@@ -1,0 +1,158 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DCE Assistant Support Pro</title>
+<style>
+:root {
+ --bg-main:#0a0f18; --bg-card:#121a29; --border:#dc2626; --border-soft:#1f2c42;
+ --accent:#ef4444; --highlight:#38bdf8; --text:#e2e8f0; --text-heading:#fff;
+ --muted:#94a3b8; --code-bg:#060a11; --badge-bg:#7f1d1d; --badge-text:#fecaca;
+ --badge-border:#dc2626; --toggle-bg:#1e293b; --chip-bg:#162235; --btn-primary:#dc2626; --btn-secondary:#0284c7;
+}
+[data-theme="light"] { --bg-main:#f8fafc; --bg-card:#fff; --border:#ea580c; --border-soft:#cbd5e1; --accent:#ea580c; --highlight:#0284c7; --text:#0f172a; --text-heading:#0284c7; --muted:#475569; --code-bg:#f1f5f9; --badge-bg:#ffedd5; --badge-text:#9a3412; --badge-border:#fb923c; --toggle-bg:#e2e8f0; --chip-bg:#f1f5f9; --btn-primary:#ea580c; --btn-secondary:#0284c7; }
+* { box-sizing:border-box; } body { margin:0; padding:10px; background:var(--bg-main); color:var(--text); font:11px "Segoe UI", sans-serif; }
+.header,.row,.tabs { display:flex; align-items:center; gap:6px; } .header { justify-content:space-between; border-bottom:1px solid var(--border-soft); padding-bottom:7px; margin-bottom:8px; }
+.header h1 { margin:0; font-size:14px; color:var(--text-heading); } .badge { background:var(--badge-bg); color:var(--badge-text); border:1px solid var(--badge-border); border-radius:4px; padding:2px 5px; font-size:8px; font-weight:bold; }
+.flag-alert { display:none; background:#7f1d1d; color:#fef2f2; border:1px solid #ef4444; border-radius:4px; padding:8px; margin-bottom:8px; font-size:10.5px; font-weight:bold; }
+button,select,textarea,input { font:inherit; } button { border:0; border-radius:4px; padding:6px 8px; color:#fff; font-weight:bold; cursor:pointer; } button:hover { filter:brightness(1.1); }
+.btn-primary { background:var(--btn-primary); } .btn-secondary { background:var(--btn-secondary); } .btn-muted { background:#334155; } .btn-reset { background:#b91c1c; }
+.tabs { margin-bottom:8px; } .tab { flex:1; background:var(--toggle-bg); color:var(--muted); border:1px solid var(--border-soft); } .tab.active { background:var(--accent); color:#fff; }
+.view { display:none; } .view.active { display:block; } .section { background:var(--bg-card); border:1px solid var(--border-soft); border-left:3px solid var(--border); border-radius:5px; padding:8px; margin-bottom:8px; }
+.title { color:var(--accent); font-weight:bold; margin-bottom:6px; display:flex; justify-content:space-between; } .grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+label { color:var(--muted); display:block; font-size:9px; margin-bottom:2px; } select,input,textarea { width:100%; background:var(--code-bg); color:var(--text); border:1px solid var(--border-soft); border-radius:4px; padding:6px; } textarea { min-height:90px; resize:vertical; }
+.actions { display:flex; gap:5px; margin-top:6px; } .actions > * { flex:1; } .status { color:var(--muted); font-size:9px; margin-top:5px; min-height:14px; }
+.audit-ok { color:#34d399; } .audit-warn { color:#f87171; } .agent { border:1px solid var(--border-soft); border-radius:4px; padding:6px; margin-top:5px; } .agent.flagged { border-color:#ef4444; background:#3b1218; }
+.case { border:1px solid var(--border-soft); border-radius:4px; padding:7px; margin-top:5px; } .case strong { color:var(--highlight); } .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="header"><div class="row"><h1>DCE Support Pro</h1><span class="badge">FLOOR SUPPORT</span></div><div class="row"><span id="connection"> DISCONNECTED</span><button id="theme" class="btn-muted"> Light</button><button id="fullscreen" class="btn-secondary">⤢ Full Screen</button></div></div>
+<!-- Support & Issue Reporting Bar -->
+<div style="margin-bottom: 8px;">
+ <button id="btn-open-report-issue" class="btn-primary" style="width: 100%; font-size: 10px; padding: 5px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #0284c7; border: 1px solid #38bdf8;" title="Auto-capture page screenshot and send issue report to dev support">
+   Report Issue & Auto-Screenshot (Dev Support)
+ </button>
+</div>
+<div id="flag-alert" class="flag-alert" role="alert"></div>
+<div class="tabs"><button class="tab active" data-view="inspect"> Inspect</button><button class="tab" data-view="escalate"> Escalate</button><button class="tab" data-view="floor"> Floor</button></div>
+<section id="view-inspect" class="view active">
+ <div class="section"><div class="title">Active Ticket Auditor <span id="audit-status">Waiting...</span></div><div id="audit-results">Connect to DEL CRM to inspect mandatory fields.</div><div class="actions"><button id="inspect" class="btn-secondary"> Inspect Now</button><button id="reset" class="btn-reset"> Cascade Reset</button></div><div id="override-status" class="status"></div></div>
+ <div class="section"><div class="title">Historical Comparator</div><div class="actions"><button id="scan-open" class="btn-secondary"> Scan Last 3 Open</button><button id="scan-closed" class="btn-muted"> Scan Last 3 Closed</button></div><div id="case-results"><div class="status">No cases scanned.</div></div></div>
+ <div class="section"><div class="title">Support Overrides</div><label for="override">Manual classification preset</label><select id="override"><option value="">Choose an override...</option><option>Appeal - Escalated</option><option>Dispute - Investigation</option><option>Rejected - Review Required</option><option>Escalated - Back Office</option></select><div class="status">Use Cascade Reset first when dependent dropdowns are stuck on --.</div></div>
+</section>
+<section id="view-escalate" class="view">
+ <div class="section"><div class="title">Back-Office Escalation Handoff</div><div class="grid"><div><label for="reason">Escalation reason</label><select id="reason"><option>SLA Breach</option><option>Unresolved System Issue</option><option>Document Re-submission</option></select></div><div><label for="action">Action required</label><select id="action"><option>Regional Board override request</option><option>Back-Office Queue override request</option></select></div></div><label for="findings" style="margin-top:6px">Investigation findings</label><textarea id="findings" placeholder="Record what Support found..."></textarea><label for="memo" style="margin-top:6px">Generated memo</label><textarea id="memo" readonly></textarea><div class="actions"><button id="generate" class="btn-secondary">Generate Memo</button><button id="inject" class="btn-primary"> Inject Memo to Notes Log</button></div><div id="memo-status" class="status"></div></div>
+</section>
+<section id="view-floor" class="view">
+ <div class="section">
+  <div class="title">
+   <span>Live Floor Overseer & TL Roster</span>
+   <span id="roster-status">Listening...</span>
+  </div>
+  
+  <!-- Department / Pod Filter Selector -->
+  <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+   <select id="select-floor-pod-filter" style="font-size: 10px; padding: 4px; border-radius: 4px;">
+    <option value="ALL"> All Departments & Pods</option>
+    <option value="Claims Escalations"> Claims Escalations</option>
+    <option value="Online Support & Portals"> Online Support & Portals</option>
+    <option value="Registration & Compliance"> Registration & Compliance</option>
+   </select>
+  </div>
+
+  <!-- Summary Bar -->
+  <div id="floor-summary-bar" style="display: flex; gap: 6px; font-size: 9.5px; background: var(--code-bg); padding: 5px; border-radius: 4px; margin-bottom: 8px; color: var(--muted);">
+   <span>Available: <b id="cnt-avail" style="color: #34d399;">0</b></span> ·
+   <span>Paused (Aux): <b id="cnt-aux" style="color: #f59e0b;">0</b></span> ·
+   <span>Flagged: <b id="cnt-flagged" style="color: #ef4444;">0</b></span>
+  </div>
+
+  <div id="roster"><div class="status">No agent heartbeat received.</div></div>
+ </div>
+ <!-- Report Issue & Auto-Screenshot Modal -->
+ <div id="modal-report-issue" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; padding: 10px;">
+  <div style="background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 8px; max-width: 360px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); font-size: 10px; color: var(--text);">
+   
+   <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-soft); padding-bottom: 6px; margin-bottom: 8px;">
+    <span style="font-weight: bold; font-size: 11.5px; color: var(--text-heading); display: flex; align-items: center; gap: 5px;">
+      Report Issue & Auto-Screenshot
+    </span>
+    <button id="btn-close-report-modal" style="background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; padding: 0 4px;"></button>
+   </div>
+
+   <!-- Active Connected Site Banner -->
+   <div style="background: var(--code-bg); border: 1px solid var(--border-soft); border-radius: 4px; padding: 5px 7px; margin-bottom: 8px;">
+    <div style="font-size: 8.5px; color: var(--muted); font-weight: bold;"> TARGET WEBSITE / ACTIVE PAGE:</div>
+    <div id="report-active-site-lbl" style="font-weight: bold; color: var(--highlight); font-size: 10px; word-break: break-all; margin-top: 1px;">
+     Detecting active website...
+    </div>
+   </div>
+
+   <!-- Issue Category Selector -->
+   <div style="margin-bottom: 8px;">
+    <label style="font-weight: bold; color: var(--text-heading); display: block; margin-bottom: 2px;">1. What component is having an issue?</label>
+    <select id="select-issue-category" class="dropdown" style="width: 100%; font-size: 9.5px; padding: 3px;">
+     <option value="DCE_EXTENSION"> DCE Extension / Macro / Presets (Bonga Manzini / Dev Support)</option>
+     <option value="WEBSITE_CRM"> DEL CRM / Active Website Error (CRM App Support)</option>
+     <option value="TELEPHONY_NETWORK"> Telephony / Aux / Network Issue (IT Helpdesk)</option>
+     <option value="OTHER"> Other Technical Floor Issue</option>
+    </select>
+   </div>
+
+   <!-- Support Recipient Email Selector -->
+   <div style="margin-bottom: 8px;">
+    <label style="font-weight: bold; color: var(--text-heading); display: block; margin-bottom: 2px;">2. Support Recipient Email:</label>
+    <select id="select-support-email" class="dropdown" style="width: 100%; font-size: 9.5px; padding: 3px;">
+     <option value="bonga.manzini@alteram.co.za">‍ Bonga Manzini (Dev Support) - bonga.manzini@alteram.co.za</option>
+     <option value="bonga@devsupport.co.za"> Bonga Manzini (Direct Dev) - bonga@devsupport.co.za</option>
+     <option value="support.crm@labour.gov.za"> DEL CRM App Support - support.crm@labour.gov.za</option>
+     <option value="it.helpdesk@alteram.co.za"> Floor IT Helpdesk - it.helpdesk@alteram.co.za</option>
+     <option value="qa.team@alteram.co.za"> QA & Operations Lead - qa.team@alteram.co.za</option>
+     <option value="CUSTOM"> Custom Email Address...</option>
+    </select>
+    <input type="email" id="input-custom-email" placeholder="Enter recipient email..." style="display: none; width: 100%; margin-top: 4px; font-size: 9.5px; padding: 3px; background: var(--bg-card); color: var(--text); border: 1px solid var(--border-soft); border-radius: 4px;">
+   </div>
+
+   <!-- Issue Description Textarea -->
+   <div style="margin-bottom: 8px;">
+    <label style="font-weight: bold; color: var(--text-heading); display: block; margin-bottom: 2px;">3. Issue Description:</label>
+    <textarea id="txt-issue-details" class="notes-textarea" style="height: 50px; width: 100%; font-size: 9.5px; padding: 4px;" placeholder="Describe what failed or stuck (e.g. step 2 dropdown didn't select, CRM page lag)..."></textarea>
+   </div>
+
+   <!-- Auto-Captured Screenshot Preview -->
+   <div style="margin-bottom: 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+     <label style="font-weight: bold; color: var(--text-heading);">4. Auto-Captured Screenshot:</label>
+     <button id="btn-recapture-shot" class="btn-muted" style="font-size: 8px; padding: 1px 5px; border: 1px solid var(--border-soft);"> Re-capture</button>
+    </div>
+    <div id="shot-preview-container" style="background: var(--code-bg); border: 1px dashed var(--border-soft); border-radius: 4px; padding: 4px; text-align: center; max-height: 130px; overflow: hidden;">
+     <img id="img-shot-preview" style="max-width: 100%; max-height: 120px; border-radius: 3px; display: none;" alt="Screenshot preview">
+     <span id="lbl-shot-status" style="color: var(--muted); font-size: 9px;">Capturing screen...</span>
+    </div>
+   </div>
+
+   <!-- Action Buttons -->
+   <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+    <button id="btn-send-email-report" class="btn-secondary" style="flex: 1; font-weight: bold; padding: 5px; font-size: 9.5px;" title="Open email client with report text pre-filled">
+      Open Email
+    </button>
+    <button id="btn-copy-report-text" class="btn-primary" style="flex: 1; font-weight: bold; padding: 5px; font-size: 9.5px;" title="Copy issue report and screenshot info">
+      Copy Report
+    </button>
+    <button id="btn-download-shot" class="btn-muted" style="flex: 0 0 60px; padding: 5px; font-size: 9px;" title="Download PNG screenshot file">
+      PNG
+    </button>
+   </div>
+   
+  </div>
+ </div>
+
+ <div style="text-align: center; margin-top: 14px; padding: 6px 0; border-top: 1px solid var(--border-soft); color: var(--muted); font-size: 9.5px; font-weight: bold;">
+   Designed & Built by Bonga Manzini
+ </div>
+
+ <script src="../backend-config.js"></script>
+ <script src="panel.js"></script>
+</body>
+</html>

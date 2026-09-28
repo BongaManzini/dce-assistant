@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DCE Assistant - Operations & Telephony Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --alteram-teal: #0e8354;
+      --alteram-teal-dark: #064e3b;
+      --alteram-teal-light: #10b981;
+      --alteram-orange: #d97706;
+      --alteram-orange-bright: #f59e0b;
+      --bg-dark: #0a1b29;
+      --bg-card: #0f273d;
+      --bg-card-hover: #143350;
+      --border-color: rgba(255, 255, 255, 0.12);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.6;
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(10, 27, 41, 0.95);
+      border-bottom: 2px solid var(--alteram-teal);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--alteram-teal-light);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title span {
+      color: var(--alteram-orange-bright);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .header-tag {
+      background: rgba(14, 131, 84, 0.2);
+      border: 1px solid var(--alteram-teal-light);
+      color: var(--alteram-teal-light);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      flex: 1;
+    }
+
+    .hero-section {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(217, 119, 6, 0.2);
+      border: 1px solid var(--alteram-orange-bright);
+      color: var(--alteram-orange-bright);
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 14px;
+      color: #ffffff;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #10b981, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 20px;
+      background: var(--alteram-teal-light);
+      border-radius: 2px;
+    }
+
+    .grid-downloads {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 44px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--alteram-teal-light);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      background: var(--bg-card-hover);
+    }
+
+    .card-top {
+      margin-bottom: 20px;
+    }
+
+    .card-role-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .badge-agent { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .badge-admin { background: rgba(124, 58, 237, 0.2); color: #c084fc; border: 1px solid #8b5cf6; }
+    .badge-supervisor { background: rgba(2, 132, 199, 0.2); color: #38bdf8; border: 1px solid #0284c7; }
+    .badge-support { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .card-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 14px 0 0 0;
+      font-size: 11.5px;
+      color: #cbd5e1;
+    }
+
+    .feature-list li {
+      margin-bottom: 6px;
+      position: relative;
+      padding-left: 14px;
+    }
+
+    .feature-list li::before {
+      content: "-";
+      position: absolute;
+      left: 0;
+      color: var(--alteram-teal-light);
+      font-weight: bold;
+    }
+
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--alteram-teal), var(--alteram-teal-dark));
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 12.5px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--alteram-teal-light);
+      transition: background 0.2s ease, transform 0.1s ease;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-download:hover {
+      background: linear-gradient(135deg, #10b981, var(--alteram-teal));
+      transform: scale(1.02);
+      color: #ffffff;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Training Manual Banner */
+    .manual-banner {
+      background: linear-gradient(135deg, #064e3b, #0c2b42);
+      border: 1px solid var(--alteram-teal-light);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 44px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .manual-content {
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .manual-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .manual-desc {
+      font-size: 13px;
+      color: #cbd5e1;
+      max-width: 600px;
+    }
+
+    .manual-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Instruction Grid */
+    .instruction-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+
+    .instruction-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-top: 16px;
+    }
+
+    .step-item {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .step-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--alteram-orange-bright);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .step-text {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .step-text code {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      color: #38bdf8;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 20px 32px;
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      background: rgba(10, 27, 41, 0.9);
+    }
+
+    @media (max-width: 768px) {
+      header { padding: 14px 20px; }
+      .container { padding: 24px 16px; }
+      .hero-title { font-size: 26px; }
+      .manual-banner { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand-logo">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+      <div>
+        <div class="brand-title">Alteram <span>DCE Assistant</span></div>
+        <div class="brand-subtitle">Department of Employment and Labour Suite</div>
+      </div>
+    </div>
+    <div class="header-tag">SOP v5.1 & Telephony Active</div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Hero -->
+    <section class="hero-section">
+      <div class="hero-badge">Official Release v5.1.2</div>
+      <h1 class="hero-title">Universal Contact Centre <span>Automation Portal</span></h1>
+      <p class="hero-desc">
+        Streamlined ticket processing, inbound caller verification, QA compliance note staging, and real-time floor telemetry with proactive Mic Guard protection.
+      </p>
+    </section>
+
+    <!-- Operational Training Manual Highlight -->
+    <section class="manual-banner">
+      <div class="manual-content">
+        <div class="manual-title">Operational Training Manual & Floor SOP</div>
+        <div class="manual-desc">
+          Official guide covering agent automation, 3-role caller verification, turn around times (TAT), notes staging, and telephony microphone troubleshooting.
+        </div>
+      </div>
+      <div class="manual-buttons">
+        <a href="DCE_Assistant_Training_Manual.html" class="btn-download" target="_blank">
+          View Interactive Manual (HTML)
+        </a>
+        <a href="DCE_Assistant_Training_Manual.docx" class="btn-download btn-secondary" download>
+          Download Word Edition (.docx)
+        </a>
+      </div>
+    </section>
+
+    <!-- Extension Downloads -->
+    <h2 class="section-title">Extension Distribution Packages</h2>
+    <div class="grid-downloads">
+
+      <!-- Agent Pro -->
+      <div class="card">
+        <div class="card-top">
+          <span class="card-role-badge badge-agent">Agent Pro</span>
+          <div class="card-title">DCE Agent Assistant</div>
+          <div class="card-desc">
+            Universal side panel for floor call center agents handling DEL CRM, AltDesk, and Telviva.
+          </div>
+          <ul class="feature-list">
+            <li>1-Tap categorisation & 60 presets</li>
+            <li>Inbound verification (Employee, Employer, Practitioner)</li>
+            <li>Proper note templates (7-15d & 25d TAT)</li>
+            <li>Mic Guard proactive telephony shield</li>
+          </ul>
+        </div>
+        <a href="dce-agent-extension.zip" class="btn-download" download>
+          Download Agent Extension (.zip)
+        </a>
+      </div>
+
+      <!-- Admin Studio -->
+      <div class="card">
+        <div class="card-top">
+          <span class="card-role-badge badge-admin">Admin Studio</span>
+          <div class="card-title">DCE Admin Studio</div>
+          <div class="card-desc">
+            Macro authoring, telemetry drill-down, and live team station monitoring.
+          </div>
+          <ul class="feature-list">
+            <li>Real-time floor presence & TL roster</li>
+            <li>Instant Mic Guard disconnect alarms & chimes</li>
+            <li>Field dwell time & stuck field friction analysis</li>
+            <li>Direct console access (zero passcode friction)</li>
+          </ul>
+        </div>
+        <a href="dce-admin-extension.zip" class="btn-download" download>
+          Download Admin Extension (.zip)
+        </a>
+      </div>
+
+      <!-- Supervisor Console -->
+      <div class="card">
+        <div class="card-top">
+          <span class="card-role-badge badge-supervisor">Supervisor Console</span>
+          <div class="card-title">DCE Supervisor Console</div>
+          <div class="card-desc">
+            Live operations dashboard for Team Leaders and Operations Managers.
+          </div>
+          <ul class="feature-list">
+            <li>Pod & TL station filtering</li>
+            <li>Active, Aux, and Over-Aux KPI tracking</li>
+            <li>Instant flagged incomplete ticket review</li>
+            <li>Mic Blocked status indicators</li>
+          </ul>
+        </div>
+        <a href="dce-supervisor-extension.zip" class="btn-download" download>
+          Download Supervisor Extension (.zip)
+        </a>
+      </div>
+
+      <!-- Support Suite -->
+      <div class="card">
+        <div class="card-top">
+          <span class="card-role-badge badge-support">Dev Support</span>
+          <div class="card-title">DCE Support Suite</div>
+          <div class="card-desc">
+            Telemetry collection, issue auto-capture, and diagnostic tools for IT.
+          </div>
+          <ul class="feature-list">
+            <li>One-click screen capture & error logging</li>
+            <li>Backend sync & health verification</li>
+            <li>DOM selector diagnostics</li>
+            <li>Lightweight diagnostic payload</li>
+          </ul>
+        </div>
+        <a href="dce-support-extension.zip" class="btn-download" download>
+          Download Support Extension (.zip)
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Quick Installation Instructions -->
+    <div class="instruction-box">
+      <h2 class="section-title" style="margin-bottom: 8px;">Installation & Setup Guide</h2>
+      <div class="instruction-steps">
+        <div class="step-item">
+          <div class="step-num">Step 1: Download & Extract</div>
+          <div class="step-text">
+            Download the appropriate extension ZIP above. Extract the archive into a dedicated folder on your local machine.
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">Step 2: Chrome Developer Mode</div>
+          <div class="step-text">
+            Open Google Chrome and navigate to <code>chrome://extensions</code>. In the top right corner, toggle <b>Developer mode</b> to ON.
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">Step 3: Load Unpacked</div>
+          <div class="step-text">
+            Click <b>Load unpacked</b> in the top left and select the extracted extension directory (e.g. <code>dce-agent-extension</code>).
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">Step 4: Site Permissions (Mic)</div>
+          <div class="step-text">
+            On the DEL CRM portal, click the <b>Padlock / Tune</b> icon in the address bar. Set <b>Microphone</b> to <b>Allow</b>, then reload the page.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    Alteram Solutions (Pty) Ltd | Department of Employment and Labour DCE Operations | Version 5.1.2 (Zero-Emoji Release)
+  </footer>
+
+</body>
+</html>

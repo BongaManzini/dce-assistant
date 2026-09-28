@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>DCE Floor Supervisor & Team Leader Console</title>
+ <style>
+  :root {
+   --bg: #0b1320;
+   --card-bg: #111c2e;
+   --card-border: #1e2d45;
+   --text: #f1f5f9;
+   --muted: #94a3b8;
+   --accent: #38bdf8;
+   --accent-hover: #0284c7;
+   --success: #10b981;
+   --warning: #f59e0b;
+   --danger: #ef4444;
+   --input-bg: #0f172a;
+   --input-border: #334155;
+   --header-bg: #0f172a;
+  }
+
+  [data-theme="light"] {
+   --bg: #f8fafc;
+   --card-bg: #ffffff;
+   --card-border: #cbd5e1;
+   --text: #0f172a;
+   --muted: #64748b;
+   --accent: #0284c7;
+   --accent-hover: #0369a1;
+   --success: #059669;
+   --warning: #d97706;
+   --danger: #dc2626;
+   --input-bg: #f1f5f9;
+   --input-border: #94a3b8;
+   --header-bg: #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+   background: var(--bg);
+   color: var(--text);
+   font-size: 11px;
+   line-height: 1.4;
+   padding: 10px;
+  }
+
+  .header-bar {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   background: var(--card-bg);
+   border: 1px solid var(--card-border);
+   padding: 8px 12px;
+   border-radius: 8px;
+   margin-bottom: 10px;
+  }
+
+  .brand-title {
+   font-size: 13px;
+   font-weight: 700;
+   color: var(--text);
+   display: flex;
+   align-items: center;
+   gap: 6px;
+  }
+
+  .status-badge-connected {
+   background: rgba(16, 185, 129, 0.15);
+   color: var(--success);
+   border: 1px solid var(--success);
+   padding: 2px 8px;
+   border-radius: 12px;
+   font-size: 10px;
+   font-weight: 600;
+  }
+
+  .status-badge-disconnected {
+   background: rgba(239, 68, 68, 0.15);
+   color: var(--danger);
+   border: 1px solid var(--danger);
+   padding: 2px 8px;
+   border-radius: 12px;
+   font-size: 10px;
+   font-weight: 600;
+  }
+
+  .controls-group {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+  }
+
+  select, input, textarea, button {
+   font-family: inherit;
+   font-size: 11px;
+   border-radius: 4px;
+  }
+
+  .select-ctl {
+   background: var(--input-bg);
+   color: var(--text);
+   border: 1px solid var(--input-border);
+   padding: 4px 8px;
+  }
+
+  .btn {
+   background: var(--input-bg);
+   color: var(--text);
+   border: 1px solid var(--input-border);
+   padding: 4px 10px;
+   cursor: pointer;
+   font-weight: 600;
+   display: inline-flex;
+   align-items: center;
+   gap: 4px;
+   transition: all 0.15s ease;
+  }
+  .btn:hover { background: var(--card-border); }
+
+  .btn-primary {
+   background: var(--accent);
+   color: #ffffff;
+   border: none;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  /* Navigation Tabs */
+  .nav-tabs {
+   display: flex;
+   gap: 6px;
+   margin-bottom: 10px;
+  }
+  .tab-btn {
+   flex: 1;
+   padding: 7px 10px;
+   background: var(--card-bg);
+   color: var(--muted);
+   border: 1px solid var(--card-border);
+   border-radius: 6px;
+   cursor: pointer;
+   font-weight: 700;
+   font-size: 11px;
+   text-align: center;
+   transition: all 0.15s ease;
+  }
+  .tab-btn.active {
+   background: var(--accent);
+   color: #ffffff;
+   border-color: var(--accent);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* KPI Summary Cards */
+  .kpi-grid {
+   display: grid;
+   grid-template-columns: repeat(4, 1fr);
+   gap: 8px;
+   margin-bottom: 10px;
+  }
+
+  .kpi-card {
+   background: var(--card-bg);
+   border: 1px solid var(--card-border);
+   padding: 8px 10px;
+   border-radius: 6px;
+   text-align: center;
+  }
+  .kpi-val {
+   font-size: 16px;
+   font-weight: 800;
+   color: var(--accent);
+   margin-top: 2px;
+  }
+  .kpi-lbl {
+   font-size: 9.5px;
+   color: var(--muted);
+   text-transform: uppercase;
+   font-weight: 600;
+  }
+
+  /* Analytics Bars */
+  .analytics-row {
+   margin-bottom: 8px;
+  }
+  .analytics-lbl {
+   display: flex;
+   justify-content: space-between;
+   font-size: 10px;
+   font-weight: 600;
+   margin-bottom: 3px;
+  }
+  .analytics-bar-bg {
+   background: var(--input-bg);
+   border: 1px solid var(--input-border);
+   border-radius: 4px;
+   height: 8px;
+   overflow: hidden;
+  }
+  .analytics-bar-fill {
+   background: var(--accent);
+   height: 100%;
+   width: 0%;
+   transition: width 0.4s ease;
+  }
+
+  /* Alert Banner */
+  .alert-box {
+   background: rgba(245, 158, 11, 0.15);
+   border: 1px solid var(--warning);
+   color: var(--warning);
+   padding: 8px 10px;
+   border-radius: 6px;
+   margin-bottom: 10px;
+   display: none;
+  }
+
+  /* Main Section Card */
+  .section-card {
+   background: var(--card-bg);
+   border: 1px solid var(--card-border);
+   border-radius: 8px;
+   padding: 10px;
+   margin-bottom: 10px;
+  }
+
+  .section-header {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   margin-bottom: 8px;
+   border-bottom: 1px solid var(--card-border);
+   padding-bottom: 6px;
+  }
+  .section-title {
+   font-weight: 700;
+   font-size: 12px;
+   color: var(--text);
+  }
+
+  /* Roster Table */
+  .roster-table {
+   width: 100%;
+   border-collapse: collapse;
+   font-size: 10.5px;
+  }
+  .roster-table th {
+   text-align: left;
+   padding: 6px 8px;
+   color: var(--muted);
+   border-bottom: 1px solid var(--card-border);
+   text-transform: uppercase;
+   font-size: 9px;
+  }
+  .roster-table td {
+   padding: 6px 8px;
+   border-bottom: 1px solid var(--card-border);
+   vertical-align: middle;
+  }
+  .roster-table tr:hover {
+   background: rgba(255,255,255,0.03);
+  }
+
+  .status-pill {
+   display: inline-block;
+   padding: 2px 6px;
+   border-radius: 10px;
+   font-size: 9.5px;
+   font-weight: 600;
+  }
+  .pill-avail { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+  .pill-aux { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+  .pill-over-aux { background: rgba(239, 68, 68, 0.25); color: #ef4444; border: 1px solid #ef4444; }
+
+  .stuck-tag {
+   background: rgba(239, 68, 68, 0.15);
+   color: #ef4444;
+   padding: 1px 4px;
+   border-radius: 3px;
+   font-size: 9px;
+   font-weight: bold;
+  }
+
+  /* Modal Styling */
+  .modal-overlay {
+   position: fixed;
+   top: 0; left: 0; right: 0; bottom: 0;
+   background: rgba(0,0,0,0.7);
+   display: none;
+   align-items: center;
+   justify-content: center;
+   z-index: 9999;
+   padding: 16px;
+  }
+  .modal-card {
+   background: var(--card-bg);
+   border: 1px solid var(--card-border);
+   border-radius: 8px;
+   width: 100%;
+   max-width: 440px;
+   padding: 14px;
+  }
+  .modal-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 10px;
+   font-size: 13px;
+   font-weight: bold;
+  }
+
+  .footer-attribution {
+   text-align: center;
+   padding: 8px;
+   color: var(--muted);
+   font-size: 9.5px;
+   border-top: 1px solid var(--card-border);
+   margin-top: 10px;
+  }
+
+  .footer-badge {
+   display: inline-block;
+   background: rgba(56, 189, 248, 0.1);
+   color: var(--accent);
+   border: 1px solid rgba(56, 189, 248, 0.3);
+   padding: 2px 8px;
+   border-radius: 12px;
+   font-weight: 600;
+  }
+ </style>
+</head>
+<body>
+
+
+ <!-- Top Header Bar -->
+ <div class="header-bar">
+  <div class="brand-title">
+    DCE Floor Supervisor Console
+   <span id="connection-badge" class="status-badge-connected"> CONNECTED</span>
+  </div>
+  <div class="controls-group">
+   <select id="select-pod-filter" class="select-ctl">
+    <option value="ALL"> All Team Leaders / Pods</option>
+   </select>
+   <button id="btn-theme-toggle" class="btn"> Light</button>
+   <button id="btn-open-report-issue" class="btn" style="border-color: #d97706; color: #f59e0b;"> Report Issue</button>
+  </div>
+ </div>
+
+ <!-- Navigation Tabs -->
+ <div class="nav-tabs">
+  <button id="btn-tab-roster" class="tab-btn active" type="button"> Live Floor Roster & Aux Timers</button>
+  <button id="btn-tab-insights" class="tab-btn" type="button"> Floor Insights & Telemetry Analytics</button>
+ </div>
+
+ <!-- KPI Summary Cards Header -->
+ <div class="kpi-grid">
+  <div class="kpi-card">
+   <div class="kpi-lbl">Online Agents</div>
+   <div class="kpi-val" id="kpi-online-cnt">0</div>
+  </div>
+  <div class="kpi-card">
+   <div class="kpi-lbl">In-Call / Active</div>
+   <div class="kpi-val" id="kpi-active-cnt" style="color: #10b981;">0</div>
+  </div>
+  <div class="kpi-card">
+   <div class="kpi-lbl">In Aux / Break</div>
+   <div class="kpi-val" id="kpi-aux-cnt" style="color: #f59e0b;">0</div>
+  </div>
+  <div class="kpi-card">
+   <div class="kpi-lbl">Flagged Incomplete</div>
+   <div class="kpi-val" id="kpi-flagged-cnt" style="color: #ef4444;">0</div>
+  </div>
+ </div>
+
+ <!-- Flagged Incomplete Alert Stream -->
+ <div id="flagged-alert-stream" class="alert-box">
+  <!-- Dynamic Alert Content -->
+ </div>
+
+ <!-- ================= TAB 1: LIVE ROSTER ================= -->
+ <div id="view-tab-roster" class="tab-content active">
+  <div class="section-card">
+   <div class="section-header">
+    <span class="section-title"> Live Floor Roster & Agent Aux Timers</span>
+    <div class="controls-group">
+     <button id="btn-open-webhook-config" class="btn" style="border-color: #a855f7; color: #c084fc;"> Webhooks & Alerts</button>
+     <button id="btn-open-roster-import" class="btn"> Import TL Roster</button>
+     <button id="btn-export-qa-csv" class="btn btn-primary"> Export QA CSV</button>
+    </div>
+   </div>
+
+   <table class="roster-table">
+    <thead>
+     <tr>
+      <th>Agent Station</th>
+      <th>Team / Pod</th>
+      <th>Status / Aux Timer</th>
+      <th>Active Ticket / Query</th>
+      <th>AHT / Latency</th>
+      <th>Stuck Field</th>
+      <th>Supervisor Actions</th>
+     </tr>
+    </thead>
+    <tbody id="roster-table-body">
+     <tr>
+      <td colspan="7" style="text-align: center; color: var(--muted); padding: 15px;">
+       Scanning for active agent stations on floor network...
+      </td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- ================= TAB 2: FLOOR INSIGHTS & ANALYTICS ================= -->
+ <div id="view-tab-insights" class="tab-content">
+  <div class="section-card">
+   <div class="section-header">
+    <span class="section-title"> Floor Telemetry & Ground-Truth AHT Scorecards</span>
+    <button id="btn-refresh-insights" class="btn"> Refresh Metrics</button>
+   </div>
+
+   <div class="kpi-grid" style="margin-bottom: 12px;">
+    <div class="kpi-card">
+     <div class="kpi-lbl">Calibrated Avg AHT</div>
+     <div class="kpi-val" id="insight-avg-aht" style="color: #38bdf8;">--</div>
+    </div>
+    <div class="kpi-card">
+     <div class="kpi-lbl">Avg CRM Latency</div>
+     <div class="kpi-val" id="insight-avg-latency" style="color: #a855f7;">--</div>
+    </div>
+    <div class="kpi-card">
+     <div class="kpi-lbl">Stuck Incidents</div>
+     <div class="kpi-val" id="insight-stuck-cnt" style="color: #ef4444;">0</div>
+    </div>
+    <div class="kpi-card">
+     <div class="kpi-lbl">QA Adherence Rate</div>
+     <div class="kpi-val" id="insight-qa-rate" style="color: #10b981;">100%</div>
+    </div>
+   </div>
+
+   <!-- Performance Analytics Bars -->
+   <div style="background: var(--input-bg); border: 1px solid var(--input-border); padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+    <div style="font-weight: bold; margin-bottom: 8px; color: var(--text);"> Floor Performance vs Target Thresholds:</div>
+    
+    <div class="analytics-row">
+     <div class="analytics-lbl">
+      <span>AHT vs Target (Target: 4m 00s / 240s)</span>
+      <span id="lbl-bar-aht-pct">0%</span>
+     </div>
+     <div class="analytics-bar-bg">
+      <div id="bar-aht-fill" class="analytics-bar-fill"></div>
+     </div>
+    </div>
+
+    <div class="analytics-row">
+     <div class="analytics-lbl">
+      <span>CRM Navigation Latency Impact (Target: < 800ms)</span>
+      <span id="lbl-bar-latency-pct">0%</span>
+     </div>
+     <div class="analytics-bar-bg">
+      <div id="bar-latency-fill" class="analytics-bar-fill" style="background: #a855f7;"></div>
+     </div>
+    </div>
+
+    <div class="analytics-row">
+     <div class="analytics-lbl">
+      <span>Stuck Field Dwell Ratio (>12s Friction Fields)</span>
+      <span id="lbl-bar-stuck-pct">0%</span>
+     </div>
+     <div class="analytics-bar-bg">
+      <div id="bar-stuck-fill" class="analytics-bar-fill" style="background: #ef4444;"></div>
+     </div>
+    </div>
+   </div>
+
+   <!-- Summary Audit Breakdown -->
+   <div style="font-size: 10px; color: var(--muted); line-height: 1.5;">
+    <b>Ground-Truth QA Note:</b> System latency (ms) and field dwell (>12s) telemetry are captured directly from client-side browser DOM events. This ensures Team Leaders judge agents fairly without penalizing them for web CRM latency or slow network responses.
+   </div>
+  </div>
+ </div>
+
+ <!-- Nudge Agent Modal -->
+ <div id="modal-nudge-agent" class="modal-overlay">
+  <div class="modal-card">
+   <div class="modal-header">
+    <span> Send Supervisor Nudge to Agent</span>
+    <button id="btn-close-nudge-modal" class="btn">&times;</button>
+   </div>
+   <div style="margin-bottom: 10px; color: var(--muted);" id="nudge-target-agent-lbl">
+    Target Agent: Select an agent station...
+   </div>
+   <div style="margin-bottom: 10px;">
+    <label style="display:block; margin-bottom:4px; font-weight:600;">Preset Nudge Message:</label>
+    <select id="select-preset-nudge" class="select-ctl" style="width: 100%;">
+     <option value="CUSTOM">Custom Message...</option>
+     <option value="WRAP_UP"> Please wrap up current call note - AHT target exceeded (5m+).</option>
+     <option value="CHECK_MANDATORY"> Remember to fill out mandatory classification fields before saving.</option>
+     <option value="CHECK_FLAG"> Incomplete ticket flagged - please review notes and case mode.</option>
+     <option value="BREAK_OVER"> Aux break time threshold reached - please switch status to Available.</option>
+    </select>
+   </div>
+   <div style="margin-bottom: 12px;">
+    <textarea id="txt-custom-nudge" class="select-ctl" style="width: 100%; height: 60px;" placeholder="Type custom message to display on agent's screen..."></textarea>
+   </div>
+   <div style="display: flex; justify-content: flex-end; gap: 6px;">
+    <button id="btn-cancel-nudge" class="btn">Cancel</button>
+    <button id="btn-send-nudge" class="btn btn-primary"> Send Nudge to Agent</button>
+   </div>
+  </div>
+ </div>
+
+ <!-- Agent Station Card Modal -->
+ <div id="modal-agent-card" class="modal-overlay">
+  <div class="modal-card" style="max-width: 480px;">
+   <div class="modal-header">
+    <span> Agent Station Live Card</span>
+    <button id="btn-close-card-modal" class="btn">&times;</button>
+   </div>
+   <div id="card-modal-content" style="font-size: 11px;">
+    <!-- Dynamic Agent Card Content -->
+   </div>
+  </div>
+ </div>
+
+ <!-- Roster Sheet Importer Modal -->
+ <div id="modal-roster-import" class="modal-overlay">
+  <div class="modal-card" style="max-width: 500px;">
+   <div class="modal-header">
+    <span> Import Master Roster Sheet (CSV / Table)</span>
+    <button id="btn-close-import-modal" class="btn">&times;</button>
+   </div>
+   <div style="margin-bottom: 8px; color: var(--muted);">
+    Paste CSV or tabbed roster list mapping agents to designated Team Leaders:
+   </div>
+   <textarea id="txt-roster-import-data" class="select-ctl" style="width: 100%; height: 120px;" placeholder="Agent Name, Team Leader, Department&#10;Bonga Manzini, Team Alpha, UIF Claims&#10;Jane Doe, Team Beta, CF Declarations"></textarea>
+   <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;">
+    <button id="btn-cancel-import" class="btn">Cancel</button>
+    <button id="btn-save-roster-import" class="btn btn-primary">Save Roster Mapping</button>
+   </div>
+  </div>
+ </div>
+
+ <!-- Auto-Screenshot & Report Issue Modal -->
+ <div id="modal-report-issue" class="modal-overlay">
+  <div class="modal-card">
+   <div class="modal-header">
+    <span> Report Technical Issue & Auto-Screenshot</span>
+    <button id="btn-close-report-modal" class="btn">&times;</button>
+   </div>
+   <div style="margin-bottom: 8px;">
+    <div style="color: var(--muted); margin-bottom: 4px;">Active Site / Domain:</div>
+    <div id="report-active-site-lbl" style="font-weight: bold; color: var(--accent);">Detecting active tab...</div>
+   </div>
+   <div style="margin-bottom: 8px;">
+    <label style="display:block; margin-bottom:4px; font-weight:600;">Target Component:</label>
+    <select id="select-issue-category" class="select-ctl" style="width: 100%;">
+     <option value="DCE_EXTENSION">DCE Supervisor Extension / Panel Bug</option>
+     <option value="WEBSITE_CRM">DEL CRM / Active Website Error</option>
+     <option value="TELEPHONY_NETWORK">Telephony / Network Lag</option>
+     <option value="QA_OPERATIONS">QA / Roster Telemetry Issue</option>
+    </select>
+   </div>
+   <div style="margin-bottom: 8px;">
+    <label style="display:block; margin-bottom:4px; font-weight:600;">Support Email Recipient:</label>
+    <select id="select-support-email" class="select-ctl" style="width: 100%;">
+     <option value="bonga.manzini@alteram.co.za">Lead Developer: Bonga Manzini (bonga.manzini@alteram.co.za)</option>
+     <option value="bonga@devsupport.co.za">Dev Support Backup (bonga@devsupport.co.za)</option>
+     <option value="support.crm@labour.gov.za">DEL CRM Support (support.crm@labour.gov.za)</option>
+     <option value="it.helpdesk@alteram.co.za">IT Helpdesk (it.helpdesk@alteram.co.za)</option>
+     <option value="qa.team@alteram.co.za">QA Operations Team (qa.team@alteram.co.za)</option>
+     <option value="CUSTOM">Custom Email...</option>
+    </select>
+    <input type="email" id="input-custom-email" class="select-ctl" style="width:100%; margin-top:4px; display:none;" placeholder="Enter custom support email address...">
+   </div>
+   <div style="margin-bottom: 8px;">
+    <label style="display:block; margin-bottom:4px; font-weight:600;">Issue Description:</label>
+    <textarea id="txt-issue-details" class="select-ctl" style="width: 100%; height: 50px;" placeholder="Describe what occurred..."></textarea>
+   </div>
+   <div style="margin-bottom: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+     <span style="font-weight: 600;">Captured Visible Screen Preview:</span>
+     <button id="btn-recapture-shot" class="btn"> Recapture</button>
+    </div>
+    <div id="lbl-shot-status" style="font-size: 9.5px; color: var(--muted); margin-bottom: 4px;">Capturing screen...</div>
+    <img id="img-shot-preview" style="width: 100%; max-height: 120px; border-radius: 4px; border: 1px solid var(--card-border); object-fit: contain; background: #000; display: none;">
+   </div>
+   <div style="display: flex; gap: 4px; justify-content: flex-end;">
+    <button id="btn-download-shot" class="btn"> Save PNG</button>
+    <button id="btn-copy-report-text" class="btn"> Copy Report</button>
+    <button id="btn-send-email-report" class="btn btn-primary"> Send Email</button>
+   </div>
+  </div>
+ </div>
+
+ <!-- Webhook & 5-Min Escalation Alert Config Modal -->
+ <div id="modal-webhook-config" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 99999; align-items: center; justify-content: center; padding: 15px;">
+  <div class="modal-card" style="max-width: 420px; width: 100%;">
+   <div class="modal-header">
+    <span style="font-weight: bold; color: var(--accent); font-size: 12px;"> Webhooks & 5-Minute Escalation Engine</span>
+    <button id="btn-close-webhook-modal" class="btn">&times;</button>
+   </div>
+   <p style="font-size: 9.5px; color: var(--muted); margin-bottom: 10px; line-height: 1.4;">
+    Floor alerts trigger instant audio chimes on this console. If an alert remains unacknowledged after <b>5 minutes</b>, the system automatically dispatches Slack/MS Teams webhooks and email digests to Team Leaders.
+   </p>
+
+   <div style="margin-bottom: 8px;">
+    <label style="display: block; font-weight: bold; margin-bottom: 3px; font-size: 10px;">1. Slack / Microsoft Teams Webhook URL:</label>
+    <input type="url" id="input-webhook-url" class="select-ctl" style="width: 100%; font-size: 9.5px;" placeholder="https://hooks.slack.com/services/... or MS Teams Incoming Webhook URL">
+   </div>
+
+   <div style="margin-bottom: 10px;">
+    <label style="display: block; font-weight: bold; margin-bottom: 3px; font-size: 10px;">2. Operations Lead / Team Leader Escalation Email:</label>
+    <input type="email" id="input-escalation-email" class="select-ctl" style="width: 100%; font-size: 9.5px;" placeholder="tl.escalations@alteram.co.za">
+   </div>
+
+   <div style="display: flex; justify-content: space-between; align-items: center;">
+    <span id="lbl-webhook-save-status" style="font-size: 9px; color: #10b981; font-weight: bold;"></span>
+    <div style="display: flex; gap: 4px;">
+     <button id="btn-cancel-webhook" class="btn">Cancel</button>
+     <button id="btn-save-webhook" class="btn btn-primary"> Save Webhook Config</button>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <!-- Author Attribution Footer -->
+ <div class="footer-attribution">
+  DCE Assistant Suite · Standalone Floor Supervisor Console<br>
+  <span class="footer-badge">Designed & Built by Bonga Manzini</span>
+ </div>
+
+ <script src="../backend-config.js"></script>
+ <script src="panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --bg-main: #07131d;
+      --bg-card: #0d2232;
+      --border: #0e8354;
+      --border-soft: #173b52;
+      --accent: #00d68f;
+      --highlight: #00a3e0;
+      --alteram-navy: #0a1b29;
+      --text: #e2e8f0;
+      --text-heading: #ffffff;
+      --muted: #8ea3b7;
+      --code-bg: #040d14;
+      --tip-bg: #4a3407;
+      --tip-border: #d97706;
+      --tip-text: #fde68a;
+      --badge-bg: #0b3d2b;
+      --badge-text: #34d399;
+      --badge-border: #059669;
+      --toggle-bg: #102a3d;
+      --chip-bg: #102a3d;
+    }
+
+    [data-theme="light"] {
+      --bg-main: #f4f8fb;
+      --bg-card: #ffffff;
+      --border: #a7f3d0;
+      --border-soft: #dbe4ec;
+      --accent: #059669;
+      --highlight: #0284c7;
+      --alteram-navy: #0f2d42;
+      --text: #1e293b;
+      --text-heading: #0a1b29;
+      --muted: #5a7184;
+      --code-bg: #eaf2f8;
+      --tip-bg: #fffbeb;
+      --tip-border: #f59e0b;
+      --tip-text: #92400e;
+      --badge-bg: #d1fae5;
+      --badge-text: #065f46;
+      --badge-border: #6ee7b7;
+      --toggle-bg: #e2edf5;
+      --chip-bg: #edf4f9;
+    }
+
+    [data-theme="cyber"] {
+      --bg-main: #060b19;
+      --bg-card: rgba(13, 22, 45, 0.92);
+      --border: #00f0ff;
+      --border-soft: #142850;
+      --accent: #00f0ff;
+      --highlight: #7000ff;
+      --alteram-navy: #040914;
+      --text: #e0f7fa;
+      --text-heading: #ffffff;
+      --muted: #64748b;
+      --code-bg: #0a1128;
+      --tip-bg: #0d1b3e;
+      --tip-border: #00f0ff;
+      --tip-text: #00f0ff;
+      --badge-bg: #142850;
+      --badge-text: #00f0ff;
+      --badge-border: #00f0ff;
+      --toggle-bg: #101f42;
+      --chip-bg: #101f42;
+    }
+
+    [data-theme="sunset"] {
+      --bg-main: #1a0f07;
+      --bg-card: rgba(43, 24, 12, 0.92);
+      --border: #f59e0b;
+      --border-soft: #4a2810;
+      --accent: #fbbf24;
+      --highlight: #f97316;
+      --alteram-navy: #120904;
+      --text: #fef3c7;
+      --text-heading: #ffffff;
+      --muted: #a3a3a3;
+      --code-bg: #261408;
+      --tip-bg: #3d1c08;
+      --tip-border: #f97316;
+      --tip-text: #fed7aa;
+      --badge-bg: #451a03;
+      --badge-text: #fde68a;
+      --badge-border: #f59e0b;
+      --toggle-bg: #381a08;
+      --chip-bg: #381a08;
+    }
+
+    [data-theme="slate"] {
+      --bg-main: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.92);
+      --border: #38bdf8;
+      --border-soft: #334155;
+      --accent: #38bdf8;
+      --highlight: #818cf8;
+      --alteram-navy: #020617;
+      --text: #f1f5f9;
+      --text-heading: #ffffff;
+      --muted: #94a3b8;
+      --code-bg: #1e293b;
+      --tip-bg: #1e3a5f;
+      --tip-border: #0284c7;
+      --tip-text: #bae6fd;
+      --badge-bg: #1e3a5f;
+      --badge-text: #7dd3fc;
+      --badge-border: #0284c7;
+      --toggle-bg: #1e293b;
+      --chip-bg: #1e293b;
+    }
+
+    /* Custom Wallpaper Styling */
+    html.custom-bg, body.custom-bg {
+      background-color: #07131d !important;
+      background-size: cover !important;
+      background-position: center center !important;
+      background-repeat: no-repeat !important;
+      background-attachment: fixed !important;
+      position: relative;
+    }
+    body.custom-bg::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(7, 19, 29, 0.65);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body.custom-bg > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 10px;
+      background: var(--bg-main); 
+      color: var(--text); 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      font-size: 11.5px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .header {
+      font-weight: bold; 
+      margin-bottom: 8px; 
+      border-bottom: 1px solid var(--border-soft); 
+      padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-badge {
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      border: 1px solid var(--badge-border);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 8.5px;
+      font-weight: bold;
+    }
+
+    .theme-select-dropdown {
+      background: var(--toggle-bg);
+      color: var(--text);
+      border: 1px solid var(--border-soft);
+      font-size: 9.5px;
+      font-weight: bold;
+      border-radius: 4px;
+      padding: 2px 4px;
+      outline: none;
+    }
+
+    .bg-input-box {
+      display: none;
+      margin-bottom: 6px;
+      background: var(--code-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: 4px;
+      padding: 4px 6px;
+      gap: 4px;
+    }
+    .bg-input-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 9.5px;
+      outline: none;
+    }
+
+    .agent-identity-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 4px 8px;
+      margin-bottom: 6px;
+      font-size: 10px;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--code-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: 4px;
+      padding: 4px 8px;
+      margin-bottom: 7px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .status-badge-connected {
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-badge-disconnected {
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .flash-alert-banner {
+      display: none;
+      background: #7f1d1d;
+      color: #fef2f2;
+      border: 1px solid #ef4444;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 10.5px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 7px;
+    }
+
+    @keyframes pulseRed {
+      0% { opacity: 1; background-color: #ef4444; color: #ffffff; }
+      50% { opacity: 0.35; background-color: #7f1d1d; color: #fca5a5; }
+      100% { opacity: 1; background-color: #ef4444; color: #ffffff; }
+    }
+    .flash-active {
+      display: block !important;
+      animation: pulseRed 0.6s infinite ease-in-out;
+    }
+
+    .section-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-left: 3px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      margin-bottom: 7px;
+    }
+    .section-title {
+      font-weight: bold;
+      color: var(--accent);
+      margin-bottom: 6px;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    select.category-select {
+      width: 100%;
+      background: var(--code-bg);
+      color: var(--text-heading);
+      border: 1px solid var(--border-soft);
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: bold;
+      outline: none;
+      margin-bottom: 6px;
+    }
+
+    .chip-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .btn-chip {
+      background: var(--chip-bg);
+      border: 1px solid var(--border-soft);
+      color: var(--text);
+      padding: 5px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+    .btn-chip:hover {
+      background: var(--border);
+      color: white;
+      border-color: var(--accent);
+    }
+    .btn-chip.active-running {
+      border-color: var(--highlight);
+      background: #0284c7;
+      color: white;
+    }
+
+    .notes-mode-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+      font-size: 9.5px;
+    }
+    .notes-textarea {
+      width: 100%;
+      height: 90px;
+      background: var(--code-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: 4px;
+      color: var(--highlight);
+      font-family: monospace;
+      font-size: 10px;
+      padding: 6px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .counter-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 2px;
+      margin-bottom: 4px;
+    }
+    .date-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    input[type="date"] {
+      background: var(--code-bg);
+      color: var(--text);
+      border: 1px solid var(--border-soft);
+      border-radius: 4px;
+      padding: 3px 5px;
+      outline: none;
+      box-sizing: border-box;
+      font-size: 10px;
+      color-scheme: dark;
+      flex: 1;
+    }
+
+    .buttons-row {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    button.btn-action {
+      flex: 1;
+      padding: 5px 6px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      font-size: 9.5px;
+      transition: opacity 0.2s ease;
+    }
+    button.btn-action:hover { opacity: 0.9; }
+    .btn-copy { background-color: #0284c7; }
+    .btn-paste-dce { background-color: #7c3aed; }
+    .btn-clear { background-color: #991b1b; }
+    .btn-scan { background-color: #0d9488; }
+    
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--code-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: 4px;
+      padding: 4px 8px;
+      margin-top: 6px;
+      font-size: 9.5px;
+      color: var(--muted);
+    }
+
+    #modal-action-alert {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(7, 19, 29, 0.85);
+      z-index: 999999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+    .modal-banner {
+      background: #78350f;
+      color: #fef3c7;
+      border: 1px solid #b45309;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+  </style></head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <span>DCE Assistant</span><span class="header-badge">UIF SOP v5.1</span><select id="select-theme" class="theme-select-dropdown" title="Choose Side Panel Theme"><option value="dark">Dark Emerald</option><option value="light">Corporate Light</option><option value="cyber">Midnight Cyber</option><option value="sunset">Sunset Gold</option><option value="slate">Slate Grey</option><option value="custom">Custom Wallpaper...</option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span id="lbl-engine-state" style="font-size: 9px; color: var(--muted);">Ready</span><span id="status-dot" class="status-dot"></span></div>
+  </div>
+
+  <!-- Custom Wallpaper Controller (URL Paste & Local File Picker) -->
+  <div id="bg-custom-bar" class="bg-input-box" style="display: none; align-items: center; gap: 4px; padding: 4px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 6px;">
+    <input type="text" id="input-bg-url" placeholder="Paste image URL (https://...)" title="Enter background image URL" style="flex: 1; min-width: 120px; font-size: 9.5px; padding: 3px 6px;">
+    <label class="btn-action" style="flex: 0 0 auto; background: #0284c7; color: white; cursor: pointer; padding: 3px 6px; font-size: 9.5px; border-radius: 3px; display: inline-flex; align-items: center;" title="Upload wallpaper image file from computer">File
+      <input type="file" id="input-bg-file" accept="image/*" style="display: none;">
+    </label><button id="btn-apply-bg-url" class="btn-action" style="flex: 0 0 45px; background: var(--accent); color: #07131d; font-size: 9.5px; padding: 3px 6px;">Apply</button><button id="btn-clear-bg-url" class="btn-action" style="flex: 0 0 45px; background: #991b1b; color: white; font-size: 9.5px; padding: 3px 6px;">Clear</button></div>
+
+  <!-- Scraped Agent Identity & Telephony Status Bar -->
+  <div class="agent-identity-bar" style="flex-direction: column; align-items: stretch; gap: 4px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+      <div style="display: flex; align-items: center; gap: 4px; flex: 1; overflow: hidden;">
+        <span id="lbl-agent-name" style="font-weight: bold; color: var(--text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Agent: Detecting...</span><select id="select-agent-roster" class="theme-select-dropdown" style="font-size: 8.5px; padding: 1px 3px; max-width: 105px; border-color: var(--border-color);" title="Override or Select Agent Identity"><option value="AUTO">Auto-Scrape</option><option value="Molly Sharon Xaba">Molly Sharon Xaba</option><option value="Kagiso Molefe">Kagiso Molefe</option><option value="Thabo Ndlovu">Thabo Ndlovu</option><option value="Nandi Zuma">Nandi Zuma</option><option value="Bongani Sithole">Bongani Sithole</option><option value="CUSTOM">Custom Name...</option>
+        </select>
+      </div>
+      <span id="lbl-telephony-presence" class="header-badge" style="background: #064e3b; color: #6ee7b7; border-color: #059669; flex-shrink: 0;">AVAILABLE</span></div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+      <span style="font-size: 9.5px; color: var(--muted);">Telephony Aux Reason:</span><select id="select-aux-override" class="theme-select-dropdown" style="font-size: 9px; flex: 1; font-weight: normal;"><option value="AUTO">Auto-Detect from CRM</option><option value="Taking Calls">Taking Calls (Available)</option><option value="1st Tea Break">1st Tea Break</option><option value="2nd Tea Break">2nd Tea Break</option><option value="Lunch">Lunch</option><option value="Coaching">Coaching</option><option value="E-mail Admin">E-mail Admin</option><option value="Meeting">Meeting</option><option value="Ministerial Escalations">Ministerial Escalations</option><option value="Outbound Admin">Outbound Admin</option><option value="Social Media">Social Media</option><option value="Technical Assistance">Technical Assistance</option><option value="Training">Training</option><option value="Body Break">Body Break</option><option value="Auto pause">Auto Pause</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Connection Status & Mic Guard -->
+  <div class="connection-status" style="flex-direction: column; gap: 4px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span>Active Web Connection:</span><span id="dce-connection-badge" class="status-badge-disconnected">DISCONNECTED</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 3px;">
+      <span style="font-size: 9.5px; color: var(--muted); font-weight: 600;">Mic Guard Telephony:</span>
+      <span id="mic-guard-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; border-radius: 3px; font-size: 8.5px; padding: 1px 6px; font-weight: bold;">GUARDING (HEALTHY)</span>
+    </div>
+  </div>
+
+  <!-- Support & Issue Reporting Bar -->
+  <div style="margin-bottom: 8px;">
+    <button id="btn-open-report-issue" class="btn-action" style="width: 100%; background: #0284c7; color: white; font-weight: bold; padding: 5px 8px; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #38bdf8; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);" title="Auto-capture page screenshot and send issue report to dev support">Report Issue & Auto-Screenshot (Dev Support)
+    </button></div>
+
+  <!-- Flashing Alert Bar -->
+  <div id="flash-alert-banner" class="flash-alert-banner">
+     CASE MODE ADJUSTMENT REQUIRED FOR THIS TICKET!
+  </div>
+
+  <!-- Macro Input Required Alert Banner -->
+  <div id="macro-input-alert-bar" style="display: none; background: #7c3aed; color: #ffffff; border: 1px solid #a855f7; border-radius: 6px; padding: 8px; margin-bottom: 8px; box-shadow: 0 0 12px rgba(124, 58, 237, 0.4);">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+      <span style="font-size: 10.5px; font-weight: bold;">ACTION REQUIRED: AGENT INPUT NEEDED</span><span id="lbl-pause-step-num" style="background: #581c87; color: #e9d5ff; font-size: 8.5px; padding: 1px 5px; border-radius: 3px; font-weight: bold;">Step 1</span></div>
+    <div id="macro-input-msg-text" style="font-size: 9.5px; margin-bottom: 6px; color: #f3e8ff; line-height: 1.3;">
+      Please fill in the highlighted field on your CRM screen or use the insert buttons, then click Resume below.
+    </div>
+    <button id="btn-resume-macro-panel" class="btn-action" style="background: #10b981; color: white; width: 100%; font-weight: bold; padding: 6px; font-size: 10.5px; border: 1px solid #34d399; cursor: pointer; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);">Resume Macro Execution
+    </button></div>
+
+  <!-- Ticket History Lookup -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>Ticket History & Notes Log</span><span id="lbl-scan-status" style="font-size: 9px; color: var(--muted);">Ready</span></div>
+    <div class="buttons-row">
+      <button id="btn-scan-latest-open" class="btn-action btn-scan">Open Latest (Open)</button><button id="btn-scan-latest-closed" class="btn-action btn-scan" style="background: #1e3a5f;">Open Latest (Closed)</button></div>
+  </div>
+
+  <!-- ================= INBOUND CALLER VERIFICATION (SOP v5.1 & ALTERAM SCRIPT) ================= -->
+  <div id="section-caller-verification" class="section-box" style="border-left-color: #3b82f6;">
+    <div class="section-title" style="cursor: pointer;" id="toggle-verification-panel">
+      <span style="display: flex; align-items: center; gap: 5px; color: #60a5fa;">Inbound Caller Verification
+      </span><div style="display: flex; align-items: center; gap: 4px;">
+        <span id="badge-verification-status" style="font-size: 8.5px; background: #7f1d1d; color: #fca5a5; padding: 1px 5px; border-radius: 3px; font-weight: bold; border: 1px solid #ef4444;">INCOMPLETE (0/3)
+        </span><span id="icon-toggle-verify" style="font-size: 9px; color: var(--muted);">[v]</span></div>
+    </div>
+
+    <div id="verification-content-box" style="display: block;">
+      <!-- Role Switcher Tabs -->
+      <div style="display: flex; gap: 3px; margin-bottom: 5px; background: var(--code-bg); padding: 2px; border-radius: 4px; border: 1px solid var(--border-soft);">
+        <button id="btn-role-employee" type="button" class="btn-action" style="flex: 1; font-size: 8.5px; padding: 2px 4px; background: #2563eb; color: white; font-weight: bold;">Employee
+        </button><button id="btn-role-employer" type="button" class="btn-action" style="flex: 1; font-size: 8.5px; padding: 2px 4px; background: #1e293b; color: var(--muted);">Employer
+        </button><button id="btn-role-practitioner" type="button" class="btn-action" style="flex: 1; font-size: 8.5px; padding: 2px 4px; background: #1e293b; color: var(--muted);">Practitioner
+        </button></div>
+
+      <!-- 1. EMPLOYEE VERIFICATION PANEL -->
+      <div id="panel-verify-employee" style="display: block;">
+        <!-- Compulsory Information (Need min 3 of 5 answers) -->
+        <div style="background: var(--code-bg); padding: 5px 6px; border-radius: 4px; border: 1px solid var(--border-soft); margin-bottom: 5px;">
+          <div style="font-size: 9px; color: var(--accent); font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between;">
+            <span>1. Compulsory Info (Min 3 of 5 required to pass):</span><span style="color: var(--muted); font-weight: normal; font-size: 8px;">Pass: 3/5</span></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 8.5px;">
+            <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-id" class="verify-check compulsory">
+              <span>13-Digit ID / Passport (Req)</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-name" class="verify-check compulsory">
+              <span>Full Name as per ID (Req)</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-employer" class="verify-check compulsory">
+              <span>Last Employer Worked For (Req)</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-contact" class="verify-check compulsory">
+              <span>Contact Number</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer; grid-column: 1 / -1;"><input type="checkbox" id="chk-verify-email" class="verify-check compulsory">
+              <span>Email Address</span></label></div>
+        </div>
+
+        <!-- Secondary Information (Ask any 2 if Contact/Email fails) -->
+        <div id="box-secondary-verification" style="background: var(--code-bg); padding: 5px 6px; border-radius: 4px; border: 1px solid var(--border-soft); margin-bottom: 5px;">
+          <div style="font-size: 8.5px; color: #f59e0b; font-weight: bold; margin-bottom: 3px; display: flex; justify-content: space-between;">
+            <span>2. Secondary Info (Ask any 2 if Contact/Email fails):</span></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 8.5px;">
+            <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-address" class="verify-check secondary">
+              <span>Physical Address</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-bank" class="verify-check secondary">
+              <span>Bank Name Confirmation</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-benefit" class="verify-check secondary">
+              <span>Benefit Type</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-payment" class="verify-check secondary">
+              <span>Last Payment Details</span></label></div>
+        </div>
+
+        <!-- Post-Dashboard Compulsory Verification -->
+        <div style="background: var(--code-bg); padding: 5px 6px; border-radius: 4px; border: 1px solid #0284c7; margin-bottom: 5px;">
+          <div style="font-size: 8.5px; color: #38bdf8; font-weight: bold; margin-bottom: 3px;">
+            3. Post-Dashboard Compulsory Confirmation:
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 8.5px;">
+            <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-province" class="verify-check post-dashboard">
+              <span>Application Province (Compulsory)</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-verify-centre" class="verify-check post-dashboard">
+              <span>Labour Centre (Compulsory)</span></label></div>
+          <div style="font-size: 8px; color: #fde68a; margin-top: 3px; line-height: 1.2;">
+             <b>Province Rule:</b>Always select the province & labour centre where the claim was submitted, NOT the caller's current location!
+          </div>
+        </div>
+
+        <!-- POPI Act Notice -->
+        <div style="font-size: 8px; color: #fca5a5; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 3px; padding: 3px 5px; margin-bottom: 5px;">
+           <b>POPI Act:</b>Employee representatives (Agencies) on individual claims will NOT be assisted.
+        </div>
+      </div>
+
+      <!-- 2. EMPLOYER VERIFICATION PANEL -->
+      <div id="panel-verify-employer" style="display: none;">
+        <div style="background: var(--code-bg); padding: 5px 6px; border-radius: 4px; border: 1px solid var(--border-soft); margin-bottom: 5px;">
+          <div style="font-size: 9px; color: #38bdf8; font-weight: bold; margin-bottom: 4px;">
+            Employer Verification Checklist:
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 8.5px;">
+            <label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-emp-reg" class="verify-check emp-check">
+              <span>Company Registration No</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-emp-trade" class="verify-check emp-check">
+              <span>Trade / Company Name</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-emp-province" class="verify-check emp-check">
+              <span>Province Company Located</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-emp-contact" class="verify-check emp-check">
+              <span>Contact Number</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-emp-email" class="verify-check emp-check">
+              <span>Email Address</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-emp-address" class="verify-check emp-check">
+              <span>Physical Address</span></label></div>
+        </div>
+      </div>
+
+      <!-- 3. PRACTITIONER VERIFICATION PANEL -->
+      <div id="panel-verify-practitioner" style="display: none;">
+        <div style="background: var(--code-bg); padding: 5px 6px; border-radius: 4px; border: 1px solid var(--border-soft); margin-bottom: 5px;">
+          <div style="font-size: 9px; color: #c084fc; font-weight: bold; margin-bottom: 4px;">
+            Labour Practitioner Verification:
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 8.5px;">
+            <label style="display: flex; align-items: center; gap: 3px; cursor: pointer; grid-column: 1 / -1;"><input type="checkbox" id="chk-prac-consent" class="verify-check prac-check">
+              <span>Consent to act on behalf of company confirmed</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-prac-id" class="verify-check prac-check">
+              <span>ID Number of Practitioner</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-prac-name" class="verify-check prac-check">
+              <span>Practitioner Full Name</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-prac-contact" class="verify-check prac-check">
+              <span>Contact Number</span></label><label style="display: flex; align-items: center; gap: 3px; cursor: pointer;"><input type="checkbox" id="chk-prac-email" class="verify-check prac-check">
+              <span>Email Address</span></label></div>
+          <div style="font-size: 8px; color: var(--muted); margin-top: 3px;">
+            ℹ Revert to Employer tab to verify company registration and details.
+          </div>
+        </div>
+      </div>
+
+      <!-- Verification Action Buttons -->
+      <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 4px;">
+        <button id="btn-insert-verification-notes" class="btn-action" style="flex: 1; background: #2563eb; color: white; padding: 4px 6px; font-size: 9px; font-weight: bold;" title="Insert verified identity audit trail into call notes">Stamp Verification
+        </button><button id="btn-log-failed-verification" class="btn-action" style="flex: 1; background: #991b1b; color: white; padding: 4px 6px; font-size: 9px; font-weight: bold;" title="Client failed verification: Log ticket and advise ID email (Page 3)">Failed Vetting
+        </button><button id="btn-reset-verification" class="btn-action" style="flex: 0 0 45px; background: #334155; color: white; padding: 4px; font-size: 8.5px;" title="Reset checkboxes for next caller">Reset
+        </button></div>
+
+      <!-- Survey & Call Closing Script Button -->
+      <div style="display: flex; gap: 4px;">
+        <button id="btn-insert-survey-script" class="btn-action" style="width: 100%; background: #0f766e; color: #ccfbf1; font-size: 8.5px; padding: 3px 5px;" title="Insert survey participation request & official IVR closing script">1-Click IVR Survey & Closing Script
+        </button></div>
+    </div>
+  </div>
+
+  <!-- ================= DASHBOARD NOTES DECODER (ALTERAM MEANINGS GUIDE) ================= -->
+  <div id="section-dashboard-notes-decoder" class="section-box" style="border-left-color: #8b5cf6;">
+    <div class="section-title" style="cursor: pointer;" id="toggle-notes-decoder-panel">
+      <span style="display: flex; align-items: center; gap: 5px; color: #a78bfa;">Dashboard Notes Decoder
+      </span><div style="display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 8px; background: #4c1d95; color: #ddd6fe; padding: 1px 4px; border-radius: 3px; border: 1px solid #7c3aed;">SOP Meanings (6)
+        </span><span id="icon-toggle-decoder" style="font-size: 9px; color: var(--muted);">[v]</span></div>
+    </div>
+
+    <div id="notes-decoder-content-box" style="display: none; padding-top: 4px;">
+      <div style="font-size: 8.5px; color: var(--muted); margin-bottom: 4px;">
+        Click any CRM dashboard status code below to view meaning, advice & insert note:
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 5px;">
+        <button type="button" class="btn-action btn-decoder-chip" data-code="ES" style="font-size: 8px; background: #1e1b4b; border: 1px solid #6366f1; color: #c7d2fe; padding: 3px;">E/S / EMS (Emp Services)
+        </button><button type="button" class="btn-action btn-decoder-chip" data-code="CLOSE_OPEN" style="font-size: 8px; background: #1e1b4b; border: 1px solid #6366f1; color: #c7d2fe; padding: 3px;">Close Open Period
+        </button><button type="button" class="btn-action btn-decoder-chip" data-code="ICRS" style="font-size: 8px; background: #1e1b4b; border: 1px solid #6366f1; color: #c7d2fe; padding: 3px;">UI-19 on ICRS
+        </button><button type="button" class="btn-action btn-decoder-chip" data-code="CAPTURE" style="font-size: 8px; background: #1e1b4b; border: 1px solid #6366f1; color: #c7d2fe; padding: 3px;">CAPTURE UI-19 / ES LOAD
+        </button><button type="button" class="btn-action btn-decoder-chip" data-code="GAP" style="font-size: 8px; background: #3b0764; border: 1px solid #d946ef; color: #f5d0fe; padding: 3px;">GAP (Missing UI-19)
+        </button><button type="button" class="btn-action btn-decoder-chip" data-code="SEC16" style="font-size: 8px; background: #450a0a; border: 1px solid #ef4444; color: #fca5a5; padding: 3px;">Sec 16(1)(d) Work Seeker
+        </button></div>
+
+      <!-- Decoder Detail Box -->
+      <div id="decoder-detail-box" style="display: none; background: var(--code-bg); border: 1px solid var(--border-soft); border-radius: 4px; padding: 6px; font-size: 9px; line-height: 1.35;">
+        <div id="decoder-detail-title" style="font-weight: bold; color: var(--accent); margin-bottom: 2px;"></div>
+        <div id="decoder-detail-meaning" style="color: var(--text); margin-bottom: 4px;"></div>
+        <div id="decoder-detail-action" style="color: #fde68a; background: rgba(217, 119, 6, 0.15); border-left: 2px solid #d97706; padding: 3px 5px; margin-bottom: 5px; border-radius: 2px;"></div>
+        <div style="display: flex; gap: 4px;">
+          <button id="btn-insert-decoder-note" type="button" class="btn-action" style="flex: 1; background: #7c3aed; font-size: 8.5px; padding: 3px 6px;">Insert Note to Staging
+          </button><button id="btn-close-decoder-detail" type="button" class="btn-action" style="flex: 0 0 45px; background: #334155; font-size: 8.5px; padding: 3px 6px;">Close
+          </button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1-Tap Pipeline -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>1-Tap Categorization</span><div style="display: flex; gap: 4px; align-items: center;">
+        <button id="btn-toggle-case-title-editor" class="btn-action" style="background: rgba(0, 163, 224, 0.15); border: 1px solid var(--highlight); color: var(--highlight); font-size: 8.5px; padding: 1px 6px; border-radius: 3px; cursor: pointer;" title="Change all case titles by department">Edit Titles by Dept
+        </button><span id="lbl-presets-count" style="color: var(--highlight); font-size: 9.5px;">Loading...</span></div>
+    </div>
+
+    <!-- Multi-Query Stacking Bar -->
+    <div class="notes-mode-bar" style="margin-bottom: 6px; padding: 4px 6px; background: var(--code-bg); border-radius: 4px; border: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center;">
+      <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;" title="Stack multiple customer queries into a single call notes log"><input type="checkbox" id="chk-multi-query">
+        <b style="color: var(--accent);">Multi-Query Stacking</b></label><label style="display: flex; align-items: center; gap: 4px; cursor: pointer;"><input type="checkbox" id="chk-disable-modals">
+        <span style="color: var(--muted);">Disable Modal Alerts</span></label></div>
+
+    <!-- Operational Department Selector -->
+    <div style="margin-bottom: 5px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 8.5px; font-weight: bold;">
+        <span style="color: var(--muted);">OPERATIONAL DEPARTMENT:</span><span id="lbl-dept-count" style="color: var(--accent); font-size: 8px;">All Departments</span></div>
+      <select id="select-department-filter" class="category-select" style="margin-bottom: 4px; border-left: 3px solid var(--accent); background: var(--bg-card); font-size: 10px;"><option value="ALL">All Departments (Show All)</option><option value="UIF">UIF — Unemployment Insurance Fund</option><option value="CF">CF — Compensation Fund (COIDA / IOD)</option><option value="IES">IES — Inspection & Enforcement Services (BCEA / OHS)</option><option value="PES">PES — Public Employment Services (ESSA)</option><option value="GENERAL">General & Floor Services</option>
+      </select>
+    </div>
+
+    <!-- Department Case Title Customizer Drawer -->
+    <div id="panel-case-title-editor" style="display: none; margin: 6px 0 8px 0; background: var(--code-bg); border: 1px solid var(--highlight); border-radius: 6px; padding: 7px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border-soft);">
+        <span style="font-size: 9.5px; font-weight: bold; color: var(--highlight); display: flex; align-items: center; gap: 4px;">Change Case Titles by Department
+        </span><button id="btn-close-case-title-editor" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 4px;" title="Close editor">X</button></div>
+
+      <!-- Department Selector inside editor -->
+      <div style="margin-bottom: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 8.5px; font-weight: bold;">
+          <span style="color: var(--muted);">TARGET DEPARTMENT:</span><span id="lbl-edit-dept-count" style="color: var(--accent); font-size: 8px;">43 Presets</span></div>
+        <select id="select-edit-department" class="category-select" style="font-size: 9.5px; padding: 3px 5px; background: var(--bg-card); border-left: 3px solid var(--highlight); margin-bottom: 0;"><option value="UIF">UIF — Unemployment Insurance Fund</option><option value="CF">CF — Compensation Fund (COIDA / IOD)</option><option value="IES">IES — Inspection & Enforcement Services</option><option value="PES">PES — Public Employment Services</option><option value="GENERAL">General & Floor Services</option><option value="ALL">All Departments (Show All)</option>
+        </select>
+      </div>
+
+      <!-- Bulk Actions Card -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 4px; padding: 5px; margin-bottom: 6px;">
+        <div style="font-size: 8.5px; font-weight: bold; color: var(--accent); margin-bottom: 4px;">
+           BULK ACTIONS (APPLY TO CURRENT DEPARTMENT):
+        </div>
+        
+        <!-- Batch Prefix -->
+        <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 4px;">
+          <input type="text" id="input-batch-prefix" placeholder="Prefix (e.g. [UIF] or CF - )" style="flex: 1; font-size: 9px; padding: 2px 5px; background: var(--code-bg); color: var(--text); border: 1px solid var(--border-soft); border-radius: 3px;">
+          <button id="btn-apply-batch-prefix" class="btn-action" style="flex: 0 0 75px; font-size: 8px; background: #0284c7; padding: 3px 4px;" title="Prepend prefix to all case titles in this department">Add Prefix
+          </button></div>
+
+        <!-- Batch Find & Replace -->
+        <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 4px;">
+          <input type="text" id="input-batch-find" placeholder="Find..." style="flex: 1; font-size: 9px; padding: 2px 5px; background: var(--code-bg); color: var(--text); border: 1px solid var(--border-soft); border-radius: 3px;">
+          <input type="text" id="input-batch-replace" placeholder="Replace with..." style="flex: 1; font-size: 9px; padding: 2px 5px; background: var(--code-bg); color: var(--text); border: 1px solid var(--border-soft); border-radius: 3px;">
+          <button id="btn-apply-batch-replace" class="btn-action" style="flex: 0 0 75px; font-size: 8px; background: #0d9488; padding: 3px 4px;" title="Find and replace across all case titles in this department">Replace All
+          </button></div>
+
+        <!-- Casing & Reset Buttons -->
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button id="btn-case-upper" class="btn-action" style="flex: 1; font-size: 8px; background: #1e3a5f; padding: 2px;" title="Convert all titles in department to uppercase">UPPERCASE
+          </button><button id="btn-case-title" class="btn-action" style="flex: 1; font-size: 8px; background: #1e3a5f; padding: 2px;" title="Convert all titles in department to Title Case">Title Case
+          </button><button id="btn-reset-dept-titles" class="btn-action" style="flex: 1; font-size: 8px; background: #475569; padding: 2px;" title="Reset this department to SOP default case titles">Reset SOP
+          </button></div>
+      </div>
+
+      <!-- Scrollable Individual Presets List -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; font-size: 8.5px; font-weight: bold; color: var(--muted);">
+        <span>INDIVIDUAL PRESET CASE TITLES:</span><span style="font-size: 8px; color: var(--muted);">Edit directly</span></div>
+      <div id="case-title-presets-list" style="max-height: 190px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 4px; background: var(--bg-main); border: 1px solid var(--border-soft); border-radius: 4px; margin-bottom: 6px;">
+        <!-- Dynamically generated rows -->
+      </div>
+
+      <!-- Save & Feedback Controls -->
+      <div style="display: flex; gap: 4px; align-items: center;">
+        <button id="btn-save-case-titles" class="btn-action" style="flex: 1; background: #059669; font-weight: bold; font-size: 9.5px; padding: 4px;" title="Save all case title changes for this department">Save Changes for This Department
+        </button></div>
+      <div id="case-title-save-msg" style="display: none; margin-top: 4px; font-size: 8.5px; color: #34d399; text-align: center; font-weight: bold;">
+         Saved successfully!
+      </div>
+    </div>
+
+    <select id="select-category-filter" class="category-select"><option value="ALL">All Categories (Show All)</option>
+    </select>
+    <div class="chip-grid" id="disposition-chips"></div>
+  </div>
+
+  <!-- ================= LIVE SOP v5.1 GUIDANCE & ROUTING CARD ================= -->
+  <div id="section-sop-guidance" class="section-box" style="display: none; border-left-color: #10b981; background: var(--bg-card);">
+    <div class="section-title" style="margin-bottom: 4px;">
+      <span id="sop-guide-title" style="color: #34d399; font-size: 10px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 210px;">SOP Guidance: Active Scenario
+      </span><span id="sop-guide-section-badge" style="font-size: 8px; background: #064e3b; color: #6ee7b7; padding: 1px 4px; border-radius: 3px; border: 1px solid #059669; font-weight: bold;">SOP §2.1
+      </span></div>
+
+    <!-- Case Status, Mode, Workgroup & TAT Badges -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 5px; font-size: 8.5px;">
+      <div style="background: var(--code-bg); padding: 3px 5px; border-radius: 3px; border: 1px solid var(--border-soft);">
+        <span style="color: var(--muted); display: block; font-size: 8px;">Case Status:</span><b id="sop-val-status" style="color: #38bdf8;">Resolved (FCR)</b></div>
+      <div style="background: var(--code-bg); padding: 3px 5px; border-radius: 3px; border: 1px solid var(--border-soft);">
+        <span style="color: var(--muted); display: block; font-size: 8px;">Case Mode:</span><b id="sop-val-mode" style="color: #34d399;">Normal</b></div>
+      <div style="background: var(--code-bg); padding: 3px 5px; border-radius: 3px; border: 1px solid var(--border-soft);">
+        <span style="color: var(--muted); display: block; font-size: 8px;">Dispatch Target:</span><b id="sop-val-workgroup" style="color: #fbbf24; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">N/A (FCR)</b></div>
+      <div style="background: var(--code-bg); padding: 3px 5px; border-radius: 3px; border: 1px solid var(--border-soft);">
+        <span style="color: var(--muted); display: block; font-size: 8px;">TAT / SLA:</span><b id="sop-val-tat" style="color: #f472b6;">Immediate FCR</b></div>
+    </div>
+
+    <!-- Probing & Documents Container -->
+    <div id="sop-probing-docs-box" style="background: var(--code-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-soft); margin-bottom: 4px; font-size: 8.5px;">
+      <div style="margin-bottom: 4px;">
+        <b style="color: var(--accent);">Recommended Probing Questions:</b><ul id="sop-probing-list" style="margin: 2px 0 4px 14px; padding: 0; color: var(--text); line-height: 1.3;"></ul>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+          <b style="color: #f59e0b;">Required Supporting Documents:</b><button id="btn-insert-docs-to-notes" style="background: #0d9488; color: white; border: none; border-radius: 3px; font-size: 8px; padding: 2px 5px; cursor: pointer; font-weight: bold;">Insert Docs to Notes
+          </button></div>
+        <ul id="sop-docs-list" style="margin: 2px 0 0 14px; padding: 0; color: var(--text); line-height: 1.3;"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes Staging Area -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>Call Notes Staging Area</span><span id="copy-feedback" style="color: #4ade80; font-size: 10px; display: none;">Copied!</span></div>
+
+    <!-- Smart Token & Number Dropdown Toolbar -->
+    <div class="smart-token-toolbar" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; background: var(--code-bg); padding: 6px; border-radius: 6px; border: 1px solid var(--border-soft);">
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: var(--muted); font-weight: bold;">
+        <span>Number, Token & Date Insert:</span>
+      </div>
+      <div style="display: flex; gap: 4px; align-items: center;">
+        <select id="select-number-dropdown" class="dropdown" style="flex: 1; font-size: 9.5px; padding: 3px 5px;">
+          <option value="" disabled selected>-- Select Number / Token / Date --</option>
+          <option value="[NUMBER]">[NUMBER] Dynamic Number</option>
+          <option value="[ID_NUMBER]">[ID_NUMBER] SA ID Number</option>
+          <option value="[REF_NUMBER]">[REF_NUMBER] Claim Reference</option>
+          <option value="[AMOUNT]">[AMOUNT] Benefit Amount</option>
+          <option value="[W.CL_FORM]">[W.CL_FORM] CF Form</option>
+          <option value="TODAY">Today's Date</option>
+          <option value="+7DAYS">+7 Days Date</option>
+          <option value="1000">1000</option>
+          <option value="5000">5000</option>
+          <option value="10000">10000</option>
+          <option value="CUSTOM">Custom Input Field...</option>
+        </select>
+        <input type="text" id="input-custom-number" placeholder="Enter custom value..." style="flex: 1; display: none; background: var(--bg-card); color: var(--text); border: 1px solid var(--border-soft); border-radius: 4px; padding: 3px 6px; font-size: 9.5px;">
+        <button id="btn-insert-number-val" class="btn-action" style="flex: 0 0 55px; background: #0284c7; font-size: 9.5px; padding: 3px 6px;" title="Insert selected number or token into call notes">Insert</button>
+      </div>
+    </div>
+
+    <!-- Flagged Fix Reminder & Straight-to-Save Action Bar (Directly on top of Notes Log) -->
+    <div id="flagged-fix-reminder" style="display: none; background: #7f1d1d; border: 1px solid #ef4444; border-radius: 6px; padding: 8px; margin-bottom: 8px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <span style="color: #fef2f2; font-size: 10.5px; font-weight: bold;">TICKET FLAGGED INCOMPLETE — ACTION REQUIRED</span><span id="lbl-notes-lock-badge" style="background: #991b1b; color: #fca5a5; font-size: 8px; padding: 1px 5px; border-radius: 3px;">TL Directive</span></div>
+      <div id="flagged-guidance-text" style="color: #fca5a5; font-size: 9.5px; margin-bottom: 6px; line-height: 1.3;">
+        Fix ticket details manually on screen, then click "Straight to Save Case" below to insert notes & save directly.
+      </div>
+      <button id="btn-straight-to-save" class="btn-action" style="background: #10b981; color: white; width: 100%; font-weight: bold; padding: 6px; font-size: 11px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);">Straight to Save Case (Insert Notes & Save Now)
+      </button></div>
+
+    <textarea id="txt-call-notes" class="notes-textarea" readonly placeholder="[ Notes Locked] Select a 1-Tap preset and use toolbar insert buttons above to format notes..."></textarea>
+    
+    <div class="counter-bar">
+      <span id="lbl-chars-count">0 chars</span><span id="lbl-words-count">0 words</span></div>
+
+    <div class="buttons-row">
+      <button id="btn-copy-notes" class="btn-action btn-copy">Copy Notes</button><button id="btn-paste-to-dce" class="btn-action btn-paste-dce">Insert to Notes Log</button><button id="btn-flag-incomplete" class="btn-action" style="background-color: #d97706; color: white;" title="Flag this ticket as incomplete for TL review">Flag Incomplete</button><button id="btn-clear-notes" class="btn-action btn-clear" style="flex: 0 0 45px;">Clear</button></div>
+  </div>
+
+  <!-- ================= SOP v5.1 QUICK DIRECTORY & PORTALS ================= -->
+  <div class="section-box" style="border-left-color: #8b5cf6;">
+    <div class="section-title" style="cursor: pointer;" id="toggle-sop-directory">
+      <span style="display: flex; align-items: center; gap: 5px; color: #a78bfa;">UIF SOP v5.1 Portals & Escalation Directory
+      </span><span id="icon-toggle-directory" style="font-size: 9px; color: var(--muted);">[>]</span></div>
+
+    <div id="sop-directory-content" style="display: none; font-size: 8.5px; margin-top: 4px;">
+      <!-- Portals & URLs -->
+      <div style="background: var(--code-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-soft); margin-bottom: 4px;">
+        <b style="color: var(--accent); display: block; margin-bottom: 3px;">Official Web Portals:</b><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+          <span>UIF Online System:</span><button class="btn-copy-quick" data-copy="https://uifonline.labour.gov.za/uifOnline/" style="background: #1e3a5f; color: #38bdf8; border: 1px solid #0284c7; border-radius: 2px; padding: 1px 4px; font-size: 8px; cursor: pointer;">Copy URL</button></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>WSSTS Ticketing Portal:</span><button class="btn-copy-quick" data-copy="https://ccselfservice.labour.gov.za/#/sessions/signin" style="background: #1e3a5f; color: #38bdf8; border: 1px solid #0284c7; border-radius: 2px; padding: 1px 4px; font-size: 8px; cursor: pointer;">Copy URL</button></div>
+      </div>
+
+      <!-- Department Submission Emails -->
+      <div style="background: var(--code-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-soft); margin-bottom: 4px;">
+        <b style="color: #f59e0b; display: block; margin-bottom: 3px;">Official Submissions & Escalation Emails:</b><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+          <span>General Docs: uifcallcenter@labour.gov.za</span><button class="btn-copy-quick" data-copy="uifcallcenter@labour.gov.za" style="background: #334155; color: white; border: none; border-radius: 2px; padding: 1px 4px; font-size: 8px; cursor: pointer;">Copy</button></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+          <span>Employer Reg: Newui8registerations@labour.gov.za</span><button class="btn-copy-quick" data-copy="Newui8registerations@labour.gov.za" style="background: #334155; color: white; border: none; border-radius: 2px; padding: 1px 4px; font-size: 8px; cursor: pointer;">Copy</button></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+          <span>Declarations: uif.declarations@labour.gov.za</span><button class="btn-copy-quick" data-copy="uif.declarations@labour.gov.za" style="background: #334155; color: white; border: none; border-radius: 2px; padding: 1px 4px; font-size: 8px; cursor: pointer;">Copy</button></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Debtors / Contrib: enquiries.debtors@labour.gov.za</span><button class="btn-copy-quick" data-copy="enquiries.debtors@labour.gov.za" style="background: #334155; color: white; border: none; border-radius: 2px; padding: 1px 4px; font-size: 8px; cursor: pointer;">Copy</button></div>
+      </div>
+
+      <!-- Key SOP Rules Cheat-Sheet -->
+      <div style="background: var(--code-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-soft); line-height: 1.35;">
+        <b style="color: #ec4899; display: block; margin-bottom: 2px;">Key SOP Turn-Around Times & Rules:</b><div>- <b>Claims Turn-Around Time:</b> 25 working days (online/normal).</div>
+        <div>- <b>RFP / Payment Turn-Around Time:</b> 7 to 15 working days.</div>
+        <div>- <b>Complaints / Escalation TAT:</b> 14 working days (dispatch to CC Admin Complaints).</div>
+        <div>- <b>BAU Online Escalation:</b> 4 working days (token / credentials).</div>
+        <div>- <b>Document Requests:</b> Reminders Day 1, 2, 3; Auto-close Day 10.</div>
+        <div>- <b>Appeals:</b> Lodge Notice of Appeal at Labour Centre after 7 days (not online).</div>
+        <div>- <b>Labour Centre Only:</b> Death, Paternity & Reduced Work Time.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer & Importer -->
+  <div class="status-bar">
+    <span id="lbl-package-ver">Package: Initializing...</span><label class="btn-action btn-scan" style="padding: 2px 8px; cursor: pointer; text-align: center; flex: 0 0 auto;">Load JSON
+      <input type="file" id="input-import-profiles" accept=".json" style="display: none;">
+    </label></div>
+
+  <!-- Alert Modal -->
+  <div id="modal-action-alert">
+    <div class="modal-card">
+      <div style="font-weight: bold; color: var(--accent); margin-bottom: 6px; font-size: 13px;">Special Case Handling</div>
+      <div class="modal-banner" id="modal-banner-text">
+         <b>CRITICAL CASE MODE NOTICE:</b><br>
+        Remember to set <b>Case Mode</b>appropriately on DEL CRM!
+      </div>
+      <div class="buttons-row">
+        <button id="btn-modal-cancel" class="btn-action" style="background: #475569;">Cancel</button><button id="btn-modal-confirm" class="btn-action" style="background: #059669;">Apply & Auto-Fill</button></div>
+    </div>
+  </div>
+
+  <!-- Report Issue & Auto-Screenshot Modal -->
+  <div id="modal-report-issue" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; padding: 10px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-width: 360px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); font-size: 10px; color: var(--text);">
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-soft); padding-bottom: 6px; margin-bottom: 8px;">
+        <span style="font-weight: bold; font-size: 11.5px; color: var(--text-heading); display: flex; align-items: center; gap: 5px;">Report Issue & Auto-Screenshot
+        </span><button id="btn-close-report-modal" style="background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; padding: 0 4px;">X</button></div>
+
+      <!-- Active Connected Site Banner -->
+      <div style="background: var(--code-bg); border: 1px solid var(--border-soft); border-radius: 4px; padding: 5px 7px; margin-bottom: 8px;">
+        <div style="font-size: 8.5px; color: var(--muted); font-weight: bold;">TARGET WEBSITE / ACTIVE PAGE:</div>
+        <div id="report-active-site-lbl" style="font-weight: bold; color: var(--accent); font-size: 10px; word-break: break-all; margin-top: 1px;">
+          Detecting active website...
+        </div>
+      </div>
+
+      <!-- Issue Category Selector -->
+      <div style="margin-bottom: 8px;">
+        <label style="font-weight: bold; color: var(--text-heading); display: block; margin-bottom: 2px;">1. What component is having an issue?</label><select id="select-issue-category" class="dropdown" style="width: 100%; font-size: 9.5px; padding: 3px;"><option value="DCE_EXTENSION">DCE Extension / Macro / Presets (Bonga Manzini / Dev Support)</option><option value="WEBSITE_CRM">DEL CRM / Active Website Error (CRM App Support)</option><option value="TELEPHONY_NETWORK">Telephony / Aux / Network Issue (IT Helpdesk)</option><option value="OTHER">Other Technical Floor Issue</option>
+        </select>
+      </div>
+
+      <!-- Support Recipient Email Selector -->
+      <div style="margin-bottom: 8px;">
+        <label style="font-weight: bold; color: var(--text-heading); display: block; margin-bottom: 2px;">2. Support Recipient Email:</label><select id="select-support-email" class="dropdown" style="width: 100%; font-size: 9.5px; padding: 3px;"><option value="bonga.manzini@alteram.co.za">Bonga Manzini (Dev Support) - bonga.manzini@alteram.co.za</option><option value="bonga@devsupport.co.za">Bonga Manzini (Direct Dev) - bonga@devsupport.co.za</option><option value="support.crm@labour.gov.za">DEL CRM App Support - support.crm@labour.gov.za</option><option value="it.helpdesk@alteram.co.za">Floor IT Helpdesk - it.helpdesk@alteram.co.za</option><option value="qa.team@alteram.co.za">QA & Operations Lead - qa.team@alteram.co.za</option><option value="CUSTOM">Custom Email Address...</option>
+        </select>
+        <input type="email" id="input-custom-email" placeholder="Enter recipient email..." style="display: none; width: 100%; margin-top: 4px; font-size: 9.5px; padding: 3px; background: var(--bg-card); color: var(--text); border: 1px solid var(--border-soft); border-radius: 4px;">
+      </div>
+
+      <!-- Issue Description Textarea -->
+      <div style="margin-bottom: 8px;">
+        <label style="font-weight: bold; color: var(--text-heading); display: block; margin-bottom: 2px;">3. Issue Description:</label><textarea id="txt-issue-details" class="notes-textarea" style="height: 50px; width: 100%; font-size: 9.5px; padding: 4px;" placeholder="Describe what failed or stuck (e.g. step 2 dropdown didn't select, CRM page lag)..."></textarea>
+      </div>
+
+      <!-- Auto-Captured Screenshot Preview -->
+      <div style="margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+          <label style="font-weight: bold; color: var(--text-heading);">4. Auto-Captured Screenshot:</label><button id="btn-recapture-shot" class="btn-action" style="font-size: 8px; padding: 1px 5px; background: var(--toggle-bg); border: 1px solid var(--border-soft);">Re-capture</button></div>
+        <div id="shot-preview-container" style="background: var(--code-bg); border: 1px dashed var(--border-soft); border-radius: 4px; padding: 4px; text-align: center; max-height: 130px; overflow: hidden;">
+          <img id="img-shot-preview" style="max-width: 100%; max-height: 120px; border-radius: 3px; display: none;" alt="Screenshot preview">
+          <span id="lbl-shot-status" style="color: var(--muted); font-size: 9px;">Capturing screen...</span></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+        <button id="btn-send-email-report" class="btn-action" style="flex: 1; background: #0284c7; color: white; font-weight: bold; padding: 5px; font-size: 9.5px;" title="Open email client with report text pre-filled">Open Email
+        </button><button id="btn-copy-report-text" class="btn-action" style="flex: 1; background: #059669; color: white; font-weight: bold; padding: 5px; font-size: 9.5px;" title="Copy issue report and screenshot info">Copy Report
+        </button><button id="btn-download-shot" class="btn-action" style="flex: 0 0 60px; background: #475569; color: white; padding: 5px; font-size: 9px;" title="Download PNG screenshot file">PNG
+        </button></div>
+      
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 14px; padding: 6px 0; border-top: 1px solid var(--border-soft); color: var(--muted); font-size: 9.5px; font-weight: bold;">
+     Designed & Built by Bonga Manzini
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>

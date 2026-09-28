@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DCE Assistant - Agent Pro & Admin Studio Training Manual</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
+
+    :root {
+      --alteram-teal: #0e8354;
+      --alteram-teal-dark: #064e3b;
+      --alteram-orange: #d97706;
+      --alteram-orange-bright: #f59e0b;
+      --alteram-navy: #0a1b29;
+      --alteram-blue: #0284c7;
+      --bg-page: #ffffff;
+      --bg-card: #f8fafc;
+      --border-color: #cbd5e1;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      color: var(--text-main);
+      background: #e2e8f0;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    /* Print & A4 Page Styling */
+    @page {
+      size: A4;
+      margin: 15mm 15mm 18mm 15mm;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 20mm 18mm 25mm 18mm;
+      margin: 20px auto;
+      background: white;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      position: relative;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @media print {
+      body {
+        background: transparent;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        width: 100%;
+        min-height: auto;
+        padding: 0 0 15mm 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    /* Corporate Header & Footer */
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--alteram-teal);
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+
+    .alteram-logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .alteram-logo .brand-text {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--alteram-teal);
+      letter-spacing: -0.5px;
+    }
+
+    .alteram-logo .brand-text span {
+      color: var(--alteram-orange);
+    }
+
+    .alteram-logo .slogan {
+      font-size: 9px;
+      color: var(--text-muted);
+      border-left: 1px solid var(--border-color);
+      padding-left: 6px;
+      margin-left: 2px;
+      font-style: italic;
+    }
+
+    .page-number {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .doc-footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 8px;
+      margin-top: 20px;
+      text-align: center;
+      font-size: 9px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .doc-footer b {
+      color: var(--alteram-teal);
+    }
+
+    /* Content Area */
+    .content-body {
+      flex: 1;
+    }
+
+    h1.doc-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--alteram-teal-dark);
+      margin-bottom: 8px;
+    }
+
+    h2.section-heading {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--alteram-navy);
+      border-left: 4px solid var(--alteram-teal);
+      padding-left: 8px;
+      margin-top: 14px;
+      margin-bottom: 10px;
+    }
+
+    h3.sub-heading {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--alteram-teal);
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      margin-bottom: 8px;
+      color: #334155;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 10px;
+    }
+
+    li {
+      margin-bottom: 4px;
+    }
+
+    /* Image Display & Mockup Frames */
+    .img-container {
+      text-align: center;
+      margin: 12px 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+
+    .img-container img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      display: inline-block;
+    }
+
+    .img-caption {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* Callout & Alert Boxes */
+    .alert-box {
+      background: #f0fdf4;
+      border-left: 4px solid var(--alteram-teal);
+      border-radius: 0 4px 4px 0;
+      padding: 10px 12px;
+      margin: 10px 0;
+      font-size: 11.5px;
+    }
+
+    .alert-box.alert-warning {
+      background: #fffbeb;
+      border-left-color: var(--alteram-orange);
+    }
+
+    .alert-box.alert-info {
+      background: #f0f9ff;
+      border-left-color: var(--alteram-blue);
+    }
+
+    .alert-box b {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 12px;
+    }
+
+    /* Code & Note Previews */
+    .note-preview {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 11px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      line-height: 1.45;
+      margin: 8px 0;
+      white-space: pre-wrap;
+    }
+
+    /* Data Table */
+    table.sop-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 11.5px;
+    }
+
+    table.sop-table th {
+      background: var(--alteram-navy);
+      color: white;
+      text-align: left;
+      padding: 6px 8px;
+      font-weight: 600;
+    }
+
+    table.sop-table td {
+      border: 1px solid var(--border-color);
+      padding: 6px 8px;
+    }
+
+    table.sop-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    /* Print Floating Button */
+    .print-btn-bar {
+      position: fixed;
+      top: 15px;
+      right: 20px;
+      z-index: 9999;
+    }
+
+    .btn-print {
+      background: var(--alteram-teal);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(14, 131, 84, 0.4);
+    }
+    .btn-print:hover {
+      background: #0b6943;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Print Button -->
+  <div class="print-btn-bar no-print">
+    <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+  </div>
+
+  <!-- ================= PAGE 1: COVER PAGE ================= -->
+  <div class="page" style="justify-content: center; text-align: center; background: linear-gradient(180deg, #ffffff 0%, #f4fbf7 100%);">
+    <div style="margin-top: 40px;">
+      <div style="font-size: 42px; font-weight: 800; color: #0e8354; letter-spacing: -1px; margin-bottom: 4px;">
+        alteram <span style="font-size: 14px; font-weight: normal; font-style: italic; color: #64748b; vertical-align: middle;">we listen</span>
+      </div>
+      <div style="width: 80px; height: 3px; background: #d97706; margin: 12px auto 40px auto; border-radius: 2px;"></div>
+      
+      <h1 style="font-size: 28px; font-weight: 800; color: #0a1b29; line-height: 1.3; max-width: 600px; margin: 0 auto 16px auto;">
+        DCE Assistant (Agent Pro & Admin Studio)<br>
+        <span style="color: #0e8354;">Operational Floor Training Manual</span>
+      </h1>
+
+      <p style="font-size: 14px; color: #475569; max-width: 520px; margin: 0 auto 30px auto; font-weight: 600;">
+        Department of Employment and Labour (DEL) Contact Centre Operations<br>
+        Universal Ticket Automation, SOP v5.1 Decision Matrix & Verification Architecture
+      </p>
+
+      <div style="display: inline-block; background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px 28px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 50px;">
+        <div style="margin-bottom: 6px; font-size: 12px;"><b>System:</b> DCE Assistant (Universal Browser Extension)</div>
+        <div style="margin-bottom: 6px; font-size: 12px;"><b>SOP Baseline:</b> UIF & Compensation Fund SOP v5.1</div>
+        <div style="margin-bottom: 6px; font-size: 12px;"><b>Target Platforms:</b> DEL CRM, Telviva One, AltDesk, WSSTS</div>
+        <div style="margin-bottom: 6px; font-size: 12px;"><b>Release Version:</b> v5.1.0 (Zero-Passcode / Clean Floor Edition)</div>
+        <div style="font-size: 12px;"><b>Publication Date:</b> 22 September 2026</div>
+      </div>
+
+      <div style="font-size: 11px; color: #64748b;">
+        Designed & Developed by <b>Bonga Manzini</b> | Alteram Solutions Floor Technical Operations
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <b>1144, 16th Road Randjespark Midrand</b> | Postnet Suite 551, Private Bag X1, Melrose Arch, 2076<br>
+      T 010 900 4075 | www.alteram.co.za | info@alteram.co.za
+    </div>
+  </div>
+
+  <!-- ================= PAGE 2: TABLE OF CONTENTS & SYSTEM LAUNCH ================= -->
+  <div class="page">
+    <div class="doc-header">
+      <div class="alteram-logo">
+        <span class="brand-text">alteram</span>
+        <span class="slogan">we listen</span>
+      </div>
+      <div class="page-number">2 | P a g e</div>
+    </div>
+
+    <div class="content-body">
+      <h2 class="section-heading">1. System Overview & Table of Contents</h2>
+      <p>
+        The <b>DCE Assistant Extension</b> is the official contact center operational companion built for Alteram floor agents and team leaders servicing the Department of Employment and Labour (DEL). It automates CRM ticket indexing, enforces strict POPI Act inbound verification protocols, standardizes 1-tap call note generation, and connects with telephony queues.
+      </p>
+
+      <table class="sop-table">
+        <thead>
+          <tr>
+            <th style="width: 15%;">Module</th>
+            <th style="width: 45%;">Training Section</th>
+            <th style="width: 40%;">Key Agent Competency</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Section 2</b></td>
+            <td>Launching DCE Assistant & Telephony Status</td>
+            <td>Chrome Side Panel, Mic Permissions, Telephony Availability</td>
+          </tr>
+          <tr>
+            <td><b>Section 3</b></td>
+            <td>Active Web Connection & Ticket History Navigation</td>
+            <td>Live CRM Site Detection, Fast Ticket Reopen, Notes Log</td>
+          </tr>
+          <tr>
+            <td><b>Section 4</b></td>
+            <td>Inbound Caller Verification (SOP §1.2 & POPI Act)</td>
+            <td>3-Role Vetting (Employee/Employer/Practitioner), Compulsory Checks</td>
+          </tr>
+          <tr>
+            <td><b>Section 5</b></td>
+            <td>1-Tap Categorization & SOP v5.1 Routing Card</td>
+            <td>Department Presets, Probing Questions, Document Checklists</td>
+          </tr>
+          <tr>
+            <td><b>Section 6</b></td>
+            <td>Call Notes Staging Area & Dropdown Toolbar</td>
+            <td>Standard Notes Format, Dynamic Dates (TODAY/+7DAYS), Tokens</td>
+          </tr>
+          <tr>
+            <td><b>Section 7</b></td>
+            <td>Flag Incomplete & Straight-to-Save Directive</td>
+            <td>Handling Incomplete Records, TL Escalation, Quick Save</td>
+          </tr>
+          <tr>
+            <td><b>Section 8</b></td>
+            <td>HQ Admin Switchboard & Dev Support Helpdesk</td>
+            <td>Real-Time Policy Toggles, Auto-Screenshot Bug Dispatch</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 class="section-heading">2. Launching DCE Assistant & Telephony Status</h2>
+      <ol>
+        <li>Open Google Chrome and locate the <b>DCE Assistant</b> icon on the browser toolbar.</li>
+        <li>Click the extension icon to dock the assistant in the <b>Chrome Side Panel</b> alongside DEL CRM (<code>delcrmprod.alteram.co.za</code>).</li>
+        <li>Select your preferred interface theme from the header dropdown (<b>Corporate Light</b> recommended for floor operations).</li>
+        <li><b>Verify Telephony Presence:</b> Observe the presence indicator in the top green bar. When logged in and ready for calls, the badge will display <b>AVAILABLE (NOT ON CALL)</b> in solid green.</li>
+      </ol>
+
+      <div class="alert-box alert-warning">
+        <b>IMPORTANT: Microphone Site Permissions & Telephony Sync</b>
+        If Chrome microphone access is toggled off or blocked, the extension will flag an alert: <code>Disconnected (Microphone Required)</code>. Ensure site permissions in Chrome allow microphone access for telephony routing.
+      </div>
+
+      <div class="img-container">
+        <img src="manual_images/media_1790072809403.png" alt="DCE Assistant Agent Pro Header & Status" style="max-height: 240px;">
+        <div class="img-caption">Figure 2.1: DCE Assistant Agent Pro Top View showing Telephony Presence & Web Connection</div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <b>1144, 16th Road Randjespark Midrand</b> | Postnet Suite 551, Private Bag X1, Melrose Arch, 2076<br>
+      T 010 900 4075 | www.alteram.co.za | info@alteram.co.za
+    </div>
+  </div>
+
+  <!-- ================= PAGE 3: ACTIVE CONNECTION & CALLER VERIFICATION ================= -->
+  <div class="page">
+    <div class="doc-header">
+      <div class="alteram-logo">
+        <span class="brand-text">alteram</span>
+        <span class="slogan">we listen</span>
+      </div>
+      <div class="page-number">3 | P a g e</div>
+    </div>
+
+    <div class="content-body">
+      <h2 class="section-heading">3. Active Web Connection & Ticket History</h2>
+      <p>
+        The DCE Assistant maintains a persistent background heartbeat with the active CRM tab.
+      </p>
+
+      <div class="img-container">
+        <img src="manual_images/media_1790072809443.png" alt="Active Web Connection Detail" style="max-height: 120px;">
+        <div class="img-caption">Figure 3.1: Live CRM Heartbeat & Ticket Navigation Buttons</div>
+      </div>
+
+      <ul>
+        <li><b>Active Web Connection Banner:</b> Verifies the logged-in agent identity, assigned Team Leader, and active host (<code>delcrmprod.alteram.co.za</code>).</li>
+        <li><b>Open Latest (Open):</b> Automatically queries DEL CRM datatable and launches the caller's most recent active open ticket on screen with one click.</li>
+        <li><b>Open Latest (Closed):</b> Instantly pulls the caller's previous resolved case to review past resolution notes and historical agent advice.</li>
+      </ul>
+
+      <h2 class="section-heading">4. Inbound Caller Verification & POPI Act (SOP §1.2)</h2>
+      <p>
+        Prior to disclosing any claim, payment, or profile details on DEL CRM, every agent is legally mandated to complete caller identity authentication.
+      </p>
+
+      <div class="img-container">
+        <img src="manual_images/media_1790072809442.png" alt="Inbound Caller Verification Card" style="max-height: 250px;">
+        <div class="img-caption">Figure 4.1: Standardized 3-Role Inbound Caller Verification Engine</div>
+      </div>
+
+      <h3 class="sub-heading">Standard Authentication Protocol:</h3>
+      <ol>
+        <li><b>Role Switcher:</b> Click <b>Employee</b>, <b>Employer</b>, or <b>Practitioner</b> depending on the caller's capacity.</li>
+        <li><b>Compulsory Info (Step 1):</b> Must satisfy at least <b>3 out of 5</b> compulsory questions (SA ID, Full Name, Last Employer, Contact Number, Email Address).</li>
+        <li><b>Secondary Info (Step 2):</b> If contact number or email fails, ask 2 secondary verification questions (Physical Address, Bank Name, Benefit Type, Last Payment Details).</li>
+        <li><b>Post-Dashboard Confirmation (Step 3):</b> Verify <b>Application Province</b> and <b>Labour Centre</b>. <i>Province Rule: Always select the province & centre where the claim was lodged, NOT the caller's current location!</i></li>
+      </ol>
+
+      <div class="alert-box alert-warning">
+        <b>POPI ACT LEGAL DIRECTIVE:</b>
+        Employee representatives (Agencies, third-party brokers) calling on behalf of individual employee claims will <b>NOT</b> be assisted telephonically. Directed to have the claimant call directly.
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <b>1144, 16th Road Randjespark Midrand</b> | Postnet Suite 551, Private Bag X1, Melrose Arch, 2076<br>
+      T 010 900 4075 | www.alteram.co.za | info@alteram.co.za
+    </div>
+  </div>
+
+  <!-- ================= PAGE 4: 1-TAP CATEGORIZATION & SOP GUIDANCE ================= -->
+  <div class="page">
+    <div class="doc-header">
+      <div class="alteram-logo">
+        <span class="brand-text">alteram</span>
+        <span class="slogan">we listen</span>
+      </div>
+      <div class="page-number">4 | P a g e</div>
+    </div>
+
+    <div class="content-body">
+      <h2 class="section-heading">5. 1-Tap SOP Categorization & Case Routing</h2>
+      <p>
+        The <b>1-Tap Categorization Matrix</b> contains complete presets spanning UIF, Compensation Fund (CF), and Inspection services aligned with SOP v5.1.
+      </p>
+
+      <div class="img-container">
+        <img src="manual_images/media_1790072779555.png" alt="1-Tap Categorization & SOP Guidance Card" style="max-height: 250px;">
+        <div class="img-caption">Figure 5.1: Category Filter, 1-Tap Preset Chips & Live SOP Guidance Card</div>
+      </div>
+
+      <h3 class="sub-heading">Step-by-Step Categorization Flow:</h3>
+      <ol>
+        <li><b>Select Department:</b> Choose <i>UIF</i>, <i>Compensation Fund (CF)</i>, or <i>All Departments</i> from the top selector.</li>
+        <li><b>Filter Category:</b> Use the category dropdown to filter presets (e.g. <code>Payments, TAT & RFP</code>, <code>Claims Application</code>, <code>Normal Claims Appeals</code>).</li>
+        <li><b>Click Relevant Preset Chip:</b> Instantly sets the Case Title, Service, Category, Sub-Category, and Issues in the CRM ticket.</li>
+        <li><b>Inspect Live SOP Guidance Card:</b>
+          <ul>
+            <li><b>Case Status:</b> Displays mandatory case status (e.g., <code>Resolved (FCR)</code> vs <code>Open</code>).</li>
+            <li><b>Case Mode:</b> Dictates mode (e.g., <code>Normal</code> vs <code>UIF Complaint</code>).</li>
+            <li><b>Dispatch Target:</b> Identifies target workgroup (e.g., <code>CC Admin Complaints workgroup</code>).</li>
+            <li><b>TAT / SLA:</b> Specifies standard turnaround time.</li>
+            <li><b>Recommended Probing Questions:</b> Prompts questions agents must ask during the call.</li>
+            <li><b>Insert Docs to Notes:</b> Click to inject the mandatory supporting documents checklist directly into call notes.</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="alert-box alert-info">
+        <b>OFFICIAL SOP v5.1 TURN-AROUND TIMES (TAT):</b>
+        <div style="margin-top: 4px;">
+          • <b>Normal Claims Application:</b> 25 working days.<br>
+          • <b>Request for Payment (RFP):</b> 7 to 15 working days.<br>
+          • <b>UIF Complaints & Escalations:</b> 14 working days (CC Admin Complaints).<br>
+          • <b>BAU Online Escalation (Credentials):</b> 4 working days.<br>
+          • <b>Document Verification Reminders:</b> Day 1, 2, 3 reminders; auto-close on Day 10.
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <b>1144, 16th Road Randjespark Midrand</b> | Postnet Suite 551, Private Bag X1, Melrose Arch, 2076<br>
+      T 010 900 4075 | www.alteram.co.za | info@alteram.co.za
+    </div>
+  </div>
+
+  <!-- ================= PAGE 5: CALL NOTES & NUMBER/DATE DROPDOWN ================= -->
+  <div class="page">
+    <div class="doc-header">
+      <div class="alteram-logo">
+        <span class="brand-text">alteram</span>
+        <span class="slogan">we listen</span>
+      </div>
+      <div class="page-number">5 | P a g e</div>
+    </div>
+
+    <div class="content-body">
+      <h2 class="section-heading">6. Call Notes Staging & Smart Number/Date Toolbar</h2>
+      <p>
+        The <b>Call Notes Staging Area</b> eliminates manual typing errors by generating compliant, standardized call notes. It features a streamlined single dropdown for all numbers, tokens, and dates.
+      </p>
+
+      <div class="img-container">
+        <img src="manual_images/media_1790072779561.png" alt="Call Notes Staging Area & Single Dropdown" style="max-height: 240px;">
+        <div class="img-caption">Figure 6.1: Call Notes Staging Area with Single Number/Token/Date Insert Dropdown</div>
+      </div>
+
+      <h3 class="sub-heading">Using the Single Number, Token & Date Dropdown:</h3>
+      <ol>
+        <li>Click the <b>-- Select Number / Token / Date --</b> dropdown.</li>
+        <li><b>Insert Current Date:</b> Select <code>TODAY</code> and click <b>Insert</b>. It immediately replaces <code>[Insert Date]</code> or <code>[DATE]</code> with today's standard date (e.g. <code>22 Sep 2026</code>).</li>
+        <li><b>Insert Follow-up Date:</b> Select <code>+7DAYS</code> to calculate and insert a 7-day follow-up date.</li>
+        <li><b>Insert Specific Amounts or Numbers:</b> Select <code>1000</code>, <code>5000</code>, <code>10000</code>, or choose <code>Custom Input Field...</code> to type an exact benefit amount or claim number.</li>
+        <li><b>Entity Tokens:</b> Supports <code>[NUMBER]</code>, <code>[ID_NUMBER]</code>, <code>[REF_NUMBER]</code>, <code>[AMOUNT]</code>, and <code>[W.CL_FORM]</code>.</li>
+      </ol>
+
+      <h3 class="sub-heading">Standard Operational Notes Templates (Examples):</h3>
+      <div class="note-preview">Client called to follow up on his payment.
+
+RFP was done on the 22 Sep 2026 and the status is submitted.
+
+I advised the client to call us after 14 working days if no payment because they are still within the turn around time.</div>
+
+      <div class="note-preview">Client called in the follow up on their application which was submitted online.
+
+Application submitted on the 22 Sep 2026.
+
+Advised the client wait for feedback between 25 working days.</div>
+
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <div style="flex: 1; background: #e0f2fe; padding: 8px; border-radius: 4px; border: 1px solid #7dd3fc; font-size: 11px;">
+          <b>Copy Notes</b>: Copies structured text to clipboard for manual use.
+        </div>
+        <div style="flex: 1; background: #f3e8ff; padding: 8px; border-radius: 4px; border: 1px solid #d8b4fe; font-size: 11px;">
+          <b>Insert to Notes Log</b>: Directly commits the drafted notes into DEL CRM notes box.
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <b>1144, 16th Road Randjespark Midrand</b> | Postnet Suite 551, Private Bag X1, Melrose Arch, 2076<br>
+      T 010 900 4075 | www.alteram.co.za | info@alteram.co.za
+    </div>
+  </div>
+
+  <!-- ================= PAGE 6: FLAG INCOMPLETE & ADMIN SWITCHBOARD ================= -->
+  <div class="page">
+    <div class="doc-header">
+      <div class="alteram-logo">
+        <span class="brand-text">alteram</span>
+        <span class="slogan">we listen</span>
+      </div>
+      <div class="page-number">6 | P a g e</div>
+    </div>
+
+    <div class="content-body">
+      <h2 class="section-heading">7. Flagging Incomplete Tickets & Straight-to-Save</h2>
+      <p>
+        To prevent non-compliant tickets from being prematurely closed, the assistant incorporates a live QA guardrail.
+      </p>
+
+      <ul>
+        <li><b>Flag Incomplete Button:</b> If a caller disconnects prematurely or required documents/fields are missing, click <b>Flag Incomplete</b>. This tags the ticket on the Supervisor Console in real-time.</li>
+        <li><b>Straight to Save Case Directive:</b> When an incomplete ticket is reopened, a high-visibility guidance banner appears. Agents fix the missing ticket fields manually on screen, then click <b>Straight to Save Case</b> to automatically inject notes and save the case directly.</li>
+      </ul>
+
+      <h2 class="section-heading">8. HQ Admin & Team Leader Feature Switchboard</h2>
+      <p>
+        Supervisors and Operations Admins can configure floor-wide policy enforcement in real-time via the <b>DCE Master Automator</b> console without reloading agents' browsers.
+      </p>
+
+      <div class="img-container">
+        <img src="manual_images/media_1790072827968.png" alt="HQ Admin Feature Switchboard" style="max-height: 190px;">
+        <div class="img-caption">Figure 8.1: HQ Admin & Team Leader Feature Switchboard (Real-Time Agent Sync)</div>
+      </div>
+
+      <table class="sop-table">
+        <thead>
+          <tr>
+            <th style="width: 35%;">Switchboard Control</th>
+            <th style="width: 65%;">Operational Effect on Floor Agents</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Lock Agent Notes Editing (Read-Only)</b></td>
+            <td>Locks the notes textarea to read-only, preventing manual edits and enforcing 100% adherence to SOP presets.</td>
+          </tr>
+          <tr>
+            <td><b>"Straight to Save" Reminders</b></td>
+            <td>Activates guidance banners and the fast-save action bar on flagged incomplete tickets.</td>
+          </tr>
+          <tr>
+            <td><b>Step Pause Alerts & Chimes</b></td>
+            <td>Audible chime alert when automation pauses on a screen waiting for agent manual input.</td>
+          </tr>
+          <tr>
+            <td><b>Multi-Query Stacking Bar</b></td>
+            <td>Enables multi-query stacking for complex calls covering multiple unrelated enquiries.</td>
+          </tr>
+          <tr>
+            <td><b>1-Tap Auto-Step Execution</b></td>
+            <td>Automates robotic field selection and dropdown choices on DEL CRM forms.</td>
+          </tr>
+          <tr>
+            <td><b>Smart Token Insert Toolbar</b></td>
+            <td>Controls the visibility of the Number, Token & Date Insert dropdown toolbar.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 class="section-heading">9. Technical Support & Auto-Screenshot</h2>
+      <p>
+        If an agent encounters a system error or field lag, click <b>Report Issue & Auto-Screenshot (Dev Support)</b>. The assistant captures a screen snapshot and pre-fills an escalation report to <code>bonga.manzini@alteram.co.za</code> and floor IT.
+      </p>
+    </div>
+
+    <div class="doc-footer">
+      <b>1144, 16th Road Randjespark Midrand</b> | Postnet Suite 551, Private Bag X1, Melrose Arch, 2076<br>
+      T 010 900 4075 | www.alteram.co.za | info@alteram.co.za
+    </div>
+  </div>
+
+  <!-- ================= PAGE 7: BACK COVER & DIRECTORY ================= -->
+  <div class="page" style="justify-content: space-between; text-align: center;">
+    <div class="doc-header">
+      <div class="alteram-logo">
+        <span class="brand-text">alteram</span>
+        <span class="slogan">we listen</span>
+      </div>
+      <div class="page-number">7 | P a g e</div>
+    </div>
+
+    <div class="content-body" style="padding-top: 40px;">
+      <div style="font-size: 32px; font-weight: 800; color: var(--alteram-teal); margin-bottom: 8px;">
+        alteram <span style="font-size: 13px; font-style: italic; color: #64748b;">we listen</span>
+      </div>
+      <div style="width: 60px; height: 3px; background: var(--alteram-orange); margin: 0 auto 30px auto;"></div>
+
+      <h2 style="font-size: 20px; font-weight: 700; color: var(--alteram-navy); margin-bottom: 15px;">
+        Key Operational Portals & Contact Directory
+      </h2>
+
+      <div style="max-width: 500px; margin: 0 auto; text-align: left; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 18px 24px; font-size: 12px; line-height: 1.8;">
+        <div><b>UIF Online Portal:</b> https://uifonline.labour.gov.za/uifOnline/</div>
+        <div><b>WSSTS Ticketing Portal:</b> https://ccselfservice.labour.gov.za</div>
+        <div><b>General Documents Submission:</b> uifcallcenter@labour.gov.za</div>
+        <div><b>Employer Registrations:</b> Newui8registerations@labour.gov.za</div>
+        <div><b>Declarations Department:</b> uif.declarations@labour.gov.za</div>
+        <div><b>Debtors & Contributions:</b> enquiries.debtors@labour.gov.za</div>
+        <div><b>DCE Extension Floor Lead:</b> Bonga Manzini (bonga.manzini@alteram.co.za)</div>
+      </div>
+
+      <div style="margin-top: 50px; font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+        This document is proprietary to Alteram Solutions (Pty) Ltd.<br>
+        Developed for Department of Employment and Labour Contact Centre Floor Operations.<br>
+        All rights reserved &copy; 2026 Alteram Solutions.
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <b>1144, 16th Road Randjespark Midrand</b> | Postnet Suite 551, Private Bag X1, Melrose Arch, 2076<br>
+      T 010 900 4075 | www.alteram.co.za | info@alteram.co.za
+    </div>
+  </div>
+
+</body>
+</html>

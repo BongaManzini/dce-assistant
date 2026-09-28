@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "DCE Assistant (Support Pro)",
+  "version": "1.4.0",
+  "description": "Universal ticket inspections, case comparison, override workflows, and escalation handoff summaries for DEL CRM, AltDesk, Telviva, and any web platform.",
+  "permissions": ["sidePanel", "storage", "tabs", "scripting", "clipboardWrite"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "side_panel": { "default_path": "panel/panel.html" },
+  "action": { "default_title": "Open DCE Support Pro" },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["scripts/content_script.js"],
+    "run_at": "document_idle"
+  }]
+}

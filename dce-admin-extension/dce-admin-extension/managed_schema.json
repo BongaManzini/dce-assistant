@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "BackendServerUrl": {
+      "type": "string",
+      "title": "DCE Backend Server Endpoint",
+      "description": "Enterprise Node.js SSE server endpoint (e.g. http://192.168.1.100:3000)"
+    }
+  }
+}

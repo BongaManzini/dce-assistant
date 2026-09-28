@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "DCE Assistant (Agent Pro)",
+  "version": "5.1.0",
+  "description": "Universal ticket automation, caller verification, and SOP v5.1 workflow guidance for DEL CRM, AltDesk, Telviva, and any web platform.",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "scripting",
+    "tabs",
+    "clipboardWrite"
+  ],
+  "storage": {
+    "managed_schema": "managed_schema.json"
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "panel/panel.html"
+  },
+  "action": {
+    "default_title": "Open DCE Assistant (Agent Pro)"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": ["scripts/content_script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["presets.json"],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}
