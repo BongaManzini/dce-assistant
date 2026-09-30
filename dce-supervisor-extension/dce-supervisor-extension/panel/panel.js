@@ -200,6 +200,12 @@ function showStoredAlert(alert) {
   flaggedAlertStream.style.borderColor = '#ef4444';
   flaggedAlertStream.style.color = '#fca5a5';
   flaggedAlertStream.style.display = 'block';
+ } else if (alert.type === "ONE_WAY_AUDIO") {
+  flaggedAlertStream.innerHTML = `<span><b>ONE-WAY AUDIO ALERT:</b> Agent <b>${alert.agentName || "Agent"}</b>${tlText} outbound voice stalled! <b>Client cannot hear agent</b>.</span> <span style="cursor:pointer; float:right;" title="Dismiss">X</span>`;
+  flaggedAlertStream.style.background = 'rgba(234, 179, 8, 0.2)';
+  flaggedAlertStream.style.borderColor = '#eab308';
+  flaggedAlertStream.style.color = '#fde047';
+  flaggedAlertStream.style.display = 'block';
  } else if (alert.type === "MIC_RESTORED") {
   flaggedAlertStream.innerHTML = `<span><b>MIC GUARD:</b> Agent <b>${alert.agentName || "Agent"}</b>${tlText} restored microphone access.</span> <span style="cursor:pointer; float:right;" title="Dismiss">X</span>`;
   flaggedAlertStream.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -315,8 +321,8 @@ function renderAgentRoster() {
   const flaggedTag = ac.flaggedIncomplete ? `<span class="stuck-tag"> FLAGGED</span>` : "";
 
   const tel = agt.telemetry || {};
-  const latencyMs = tel.avgNavigationLatencyMs || 640;
-  const handleSec = tel.handleTimeSec || 45;
+  const latencyMs = tel.avgNavigationLatencyMs ? `${tel.avgNavigationLatencyMs}ms` : "--";
+  const handleSec = tel.handleTimeSec ? `${tel.handleTimeSec}s` : "--";
 
   let stuckHtml = "--";
   if (tel.stuckField && tel.stuckField.durationSec > 120) {
@@ -475,8 +481,8 @@ function openAgentCardModal(agt) {
    <textarea readonly class="select-ctl" style="width:100%; height:70px;">${ac.draftNotes || ac.notesText || "No notes staged yet..."}</textarea>
   </div>
   <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--muted);">
-   <span>Handle Time: <b>${formatTimer(tel.handleTimeSec || 45)}</b></span>
-   <span>Avg Latency: <b>${tel.avgNavigationLatencyMs || 640}ms</b></span>
+   <span>Handle Time: <b>${tel.handleTimeSec ? formatTimer(tel.handleTimeSec) : "--"}</b></span>
+   <span>Avg Latency: <b>${tel.avgNavigationLatencyMs ? `${tel.avgNavigationLatencyMs}ms` : "--"}</b></span>
   </div>
  `;
 
@@ -531,7 +537,7 @@ btnExportQaCsv?.addEventListener("click", () => {
    const ts = new Date(agt.lastHeartbeat || Date.now()).toISOString();
    const stuckFieldInfo = tel.stuckField ? `${tel.stuckField.field} (${tel.stuckField.durationSec}s)` : 'None';
 
-   csv += `"${ts}","${agt.agentName || ''}","${tl}","${team}","${agt.status || ''}","${agt.auxReason || 'Taking Calls'}","${ac.ticketRef || ''}","${ac.caseTitle || ''}","${sq.title || ''}",${ac.flaggedIncomplete ? 'YES' : 'NO'},${ac.hasTokens ? 'YES' : 'NO'},${tel.handleTimeSec || 45},${tel.avgNavigationLatencyMs || 640},"${stuckFieldInfo}"\n`;
+   csv += `"${ts}","${agt.agentName || ''}","${tl}","${team}","${agt.status || ''}","${agt.auxReason || 'Taking Calls'}","${ac.ticketRef || ''}","${ac.caseTitle || ''}","${sq.title || ''}",${ac.flaggedIncomplete ? 'YES' : 'NO'},${ac.hasTokens ? 'YES' : 'NO'},${tel.handleTimeSec || 0},${tel.avgNavigationLatencyMs || 0},"${stuckFieldInfo}"\n`;
   });
 
   const blob = new Blob([csv], { type: "text/csv" });

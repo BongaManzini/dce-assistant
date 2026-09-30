@@ -36,7 +36,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["presets.json"],
+      "resources": ["presets.json", "scripts/sentinel_inject.js"],
       "matches": [
         "<all_urls>"
       ]

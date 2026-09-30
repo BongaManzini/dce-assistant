@@ -2,9 +2,11 @@
 const tabBtnStudio = document.getElementById('tab-btn-studio');
 const tabBtnDashboard = document.getElementById('tab-btn-dashboard');
 const tabBtnInsights = document.getElementById('tab-btn-insights');
+const tabBtnCompare = document.getElementById('tab-btn-compare');
 const tabContentStudio = document.getElementById('tab-content-studio');
 const tabContentDashboard = document.getElementById('tab-content-dashboard');
 const tabContentInsights = document.getElementById('tab-content-insights');
+const tabContentCompare = document.getElementById('tab-content-compare');
 
 // Theme & Wallpaper Elements
 const selectTheme = document.getElementById('select-theme');
@@ -242,6 +244,42 @@ featureControlsMap.forEach(ctrl => {
  });
 });
 
+// CRM Tab Permissions — load, save, broadcast to agents
+const CRM_TAB_KEYS = [
+ { id: 'chk-tab-case-details',      tab: 'Case Details' },
+ { id: 'chk-tab-case-documents',    tab: 'Case Documents' },
+ { id: 'chk-tab-notes-log',         tab: 'Notes Log' },
+ { id: 'chk-tab-workflow-log',      tab: 'Workflow Log' },
+ { id: 'chk-tab-notifications-log', tab: 'Notifications Log' },
+ { id: 'chk-tab-audit-trail',       tab: 'Audit Trail' },
+ { id: 'chk-tab-status-change-log', tab: 'Status Change Log' },
+ { id: 'chk-tab-message-event-log', tab: 'Message Event Log' },
+ { id: 'chk-tab-related-cases',     tab: 'Related Cases' }
+];
+
+function saveTabPermissions() {
+ const permissions = {};
+ CRM_TAB_KEYS.forEach(({ id, tab }) => {
+  const el = document.getElementById(id);
+  permissions[tab] = el ? el.checked : true;
+ });
+ chrome.storage.local.set({ dce_tab_permissions: permissions });
+}
+
+// Load saved tab permissions on open
+chrome.storage.local.get(['dce_tab_permissions'], (res) => {
+ const saved = res.dce_tab_permissions || {};
+ CRM_TAB_KEYS.forEach(({ id, tab }) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // Default is allowed (true) if not previously set
+  el.checked = saved[tab] !== false;
+  el.addEventListener('change', saveTabPermissions);
+ });
+});
+
+
+
 function applyTheme(theme, bgUrl) {
  document.documentElement.setAttribute('data-theme', theme);
  localStorage.setItem('dce_admin_theme', theme);
@@ -290,15 +328,18 @@ function formatDateToStandard(dateStr) {
 if (tabBtnStudio) tabBtnStudio.addEventListener('click', () => switchToTab('STUDIO'));
 if (tabBtnDashboard) tabBtnDashboard.addEventListener('click', () => switchToTab('DASHBOARD'));
 if (tabBtnInsights) tabBtnInsights.addEventListener('click', () => switchToTab('INSIGHTS'));
+if (tabBtnCompare) tabBtnCompare.addEventListener('click', () => switchToTab('COMPARE'));
 
 function switchToTab(tabName) {
  if (tabBtnStudio) tabBtnStudio.classList.remove('active');
  if (tabBtnDashboard) tabBtnDashboard.classList.remove('active');
  if (tabBtnInsights) tabBtnInsights.classList.remove('active');
+ if (tabBtnCompare) tabBtnCompare.classList.remove('active');
 
  if (tabContentStudio) tabContentStudio.classList.remove('active');
  if (tabContentDashboard) tabContentDashboard.classList.remove('active');
  if (tabContentInsights) tabContentInsights.classList.remove('active');
+ if (tabContentCompare) tabContentCompare.classList.remove('active');
 
  if (tabName === 'STUDIO') {
   if (tabBtnStudio) tabBtnStudio.classList.add('active');
@@ -310,6 +351,10 @@ function switchToTab(tabName) {
   if (tabBtnInsights) tabBtnInsights.classList.add('active');
   if (tabContentInsights) tabContentInsights.classList.add('active');
   renderAdminInsights();
+ } else if (tabName === 'COMPARE') {
+  if (tabBtnCompare) tabBtnCompare.classList.add('active');
+  if (tabContentCompare) tabContentCompare.classList.add('active');
+  initCompareEngine();
  }
 }
 
@@ -506,19 +551,23 @@ fetch(chrome.runtime.getURL('presets.json'))
    originalSopBundle = { ...bundle };
 
    // Merge/update master presets from JSON
+   const forceUpgrade = !res.sopPackageVersion || res.sopPackageVersion !== "6.0";
    Object.keys(bundle).forEach(key => {
     if (!allProfiles[key]) {
      allProfiles[key] = { ...bundle[key], steps: bundle[key].steps || [] };
     } else {
-     // Preserve recorded steps, but ensure SOP metadata is up to date
+     // If forceUpgrade or existing steps are empty, adopt bundle steps if available
      const existingSteps = allProfiles[key].steps || [];
-     allProfiles[key] = { ...bundle[key], steps: existingSteps };
+     const stepsToUse = (existingSteps.length > 0 && !forceUpgrade)
+      ? existingSteps
+      : (bundle[key].steps && bundle[key].steps.length > 0 ? bundle[key].steps : existingSteps);
+     allProfiles[key] = { ...bundle[key], steps: stepsToUse };
     }
    });
 
    chrome.storage.local.set({
     customMacroPresets: allProfiles,
-    sopPackageVersion: "5.1"
+    sopPackageVersion: "6.0"
    });
 
    activeProfileKey = res.activePresetKey || Object.keys(allProfiles)[0];
@@ -533,6 +582,15 @@ fetch(chrome.runtime.getURL('presets.json'))
    renderStepsList(currentSteps);
    renderFilteredChips();
    renderTeamFilters();
+
+   // Always initialize Package A and Package B from boot so JSON diff is immediately populated!
+    pkgA = JSON.parse(JSON.stringify(allProfiles));
+    if (!pkgB || Object.keys(pkgB).length === 0) {
+      pkgB = JSON.parse(JSON.stringify(originalSopBundle && Object.keys(originalSopBundle).length > 0 ? originalSopBundle : allProfiles));
+    }
+    if (typeof refreshDiffView === 'function') {
+      refreshDiffView();
+    }
   });
  })
  .catch(err => console.error("Error loading presets:", err));
@@ -904,10 +962,18 @@ function renderStepsList(steps) {
   row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; background: rgba(255,255,255,0.03); border-radius: 4px; margin-bottom: 3px; font-size: 9.5px;';
 
   let desc = "";
-  if (step.action === "input") {
+  if (step.action === "wait_input" || step.action === "pause") {
+   desc = `Pause: <span style="color: #c4b5fd; font-weight: bold;">[PAUSE] Wait for on-screen input (${step.fieldName || "Field"})</span>`;
+  } else if (step.action === "input") {
    const val = step.inputValue || "";
-   const shortText = val.length > 20 ? val.slice(0, 20) + "..." : val;
-   desc = `Type: <span style="color: var(--highlight);">"${shortText}"</span>`;
+   if (val === "[DATE]") {
+    desc = `Date: <span style="color: #2dd4bf; font-weight: bold;">[DATE] (Agent fills date: ${step.fieldName || "Date field"})</span>`;
+   } else if (val === "[NUMBER]") {
+    desc = `Number: <span style="color: #38bdf8; font-weight: bold;">[NUMBER] (Agent fills number: ${step.fieldName || "Number field"})</span>`;
+   } else {
+    const shortText = val.length > 20 ? val.slice(0, 20) + "..." : val;
+    desc = `Type: <span style="color: var(--highlight);">"${shortText}"</span>`;
+   }
   } else if (step.action === "select") {
    desc = `Select: <span style="color: var(--accent);">"${step.savedOptionChoice}"</span>`;
   } else {
@@ -1255,7 +1321,12 @@ chrome.runtime.onMessage.addListener((message) => {
   updateUIState("IDLE");
  }
  if (message.action === "STEP_CAPTURED") {
-  currentSteps.push(message.step);
+  const lastStep = currentSteps[currentSteps.length - 1];
+  if (lastStep && lastStep.action === "input" && lastStep.target === message.step.target) {
+   currentSteps[currentSteps.length - 1] = message.step;
+  } else {
+   currentSteps.push(message.step);
+  }
   if (allProfiles[activeProfileKey]) {
    allProfiles[activeProfileKey].steps = currentSteps;
   }
@@ -1336,8 +1407,32 @@ document.getElementById('btn-modal-date-token')?.addEventListener('click', () =>
 document.getElementById('btn-modal-number-token')?.addEventListener('click', () => {
  if (manualStepValue) manualStepValue.value += "[NUMBER]";
 });
-document.getElementById('btn-modal-id-token')?.addEventListener('click', () => {
- if (manualStepValue) manualStepValue.value += "[ID_NUMBER]";
+
+// Admin Call Notes & Preset Template Token Inserters
+function insertLiteralToken(targetTextarea, token) {
+ if (!targetTextarea) return;
+ const start = targetTextarea.selectionStart ?? targetTextarea.value.length;
+ const end = targetTextarea.selectionEnd ?? targetTextarea.value.length;
+ const currentVal = targetTextarea.value;
+ targetTextarea.value = currentVal.substring(0, start) + token + currentVal.substring(end);
+ targetTextarea.selectionStart = targetTextarea.selectionEnd = start + token.length;
+ targetTextarea.focus();
+ if (targetTextarea === txtCallNotes) {
+  chrome.storage.local.set({ currentDraftNotes: txtCallNotes.value });
+ }
+}
+
+document.getElementById('btn-admin-insert-date')?.addEventListener('click', () => {
+ insertLiteralToken(txtCallNotes, "[DATE]");
+});
+document.getElementById('btn-admin-insert-number')?.addEventListener('click', () => {
+ insertLiteralToken(txtCallNotes, "[NUMBER]");
+});
+document.getElementById('btn-preset-token-date')?.addEventListener('click', () => {
+ insertLiteralToken(newPresetNotes, "[DATE]");
+});
+document.getElementById('btn-preset-token-number')?.addEventListener('click', () => {
+ insertLiteralToken(newPresetNotes, "[NUMBER]");
 });
 
 btnTodayDate?.addEventListener('click', () => {
@@ -1790,8 +1885,11 @@ function renderAgentRoster() {
  const selectedTeam = filterTeamSelect ? filterTeamSelect.value : "ALL";
 
  const allAgents = Object.values(liveRosterCache);
+ const now = Date.now();
 
  const filteredAgents = allAgents.filter(agt => {
+  const isLive = (now - (agt.lastHeartbeat || 0)) < 35000 && agt.status !== "OFFLINE";
+  if (!isLive) return false;
   const mapped = masterRosterMapping[agt.agentName] || {};
   const tl = mapped.tl || agt.teamLeader || "General";
   const team = mapped.team || agt.team || "Contact Centre";
@@ -1803,8 +1901,8 @@ function renderAgentRoster() {
  if (filteredAgents.length === 0) {
   agentRosterContainer.innerHTML = `
    <div style="color: var(--muted); padding: 14px; text-align: center;">
-    No active agent heartbeats detected for selected Team Leader / Pod.<br>
-    Open DEL CRM on an agent station to begin tracking.
+    No live agent stations online for selected Team Leader / Pod.<br>
+    Agents currently online on DEL CRM will appear here in real time.
    </div>
   `;
   return;
@@ -1877,7 +1975,9 @@ function displayAgentDrillDown(agt) {
  detailCaseLocation.innerText = `${activeCase.province || "--"} / ${activeCase.labourCenter || "--"}`;
 
  const tel = agt.telemetry || {};
- detailNotesFormat.innerText = `${activeCase.adheres ? "Compliant (Floor Standard)" : "Non-Standard Format"} | AHT: ${tel.handleTimeSec || 45}s | Latency: ${tel.avgNavigationLatencyMs || 640}ms`;
+ const ahtStr = tel.handleTimeSec ? `${tel.handleTimeSec}s` : "--";
+ const latStr = tel.avgNavigationLatencyMs ? `${tel.avgNavigationLatencyMs}ms` : "--";
+ detailNotesFormat.innerText = `${activeCase.adheres ? "Compliant (Floor Standard)" : "Non-Standard Format"} | AHT: ${ahtStr} | Latency: ${latStr}`;
  detailNotesFormat.style.color = activeCase.adheres ? "#34d399" : "#ef4444";
 
  if (tel.stuckField) {
@@ -1938,8 +2038,11 @@ function renderAdminInsights() {
  const selectedTeam = filterTeamSelect ? filterTeamSelect.value : "ALL";
 
  const allAgents = Object.values(liveRosterCache);
+ const now = Date.now();
  
  const agents = allAgents.filter(agt => {
+  const isLive = (now - (agt.lastHeartbeat || 0)) < 35000 && agt.status !== "OFFLINE";
+  if (!isLive) return false;
   const mapped = masterRosterMapping[agt.agentName] || {};
   const tl = mapped.tl || agt.teamLeader || "General";
   const team = mapped.team || agt.team || "Contact Centre";
@@ -2027,13 +2130,13 @@ function renderAdminInsights() {
  const metricFrictionCount = document.getElementById('metric-friction-count');
  const analyticsFrictionBars = document.getElementById('analytics-friction-bars');
 
- const avgAht = totalAgents > 0 ? Math.round(totalHandleTimeSec / totalAgents) : 138;
- const avgLatency = totalAgents > 0 ? Math.round(totalLatencyMs / totalAgents) : 640;
- const avgWrap = Math.round(avgAht * 0.18);
+ const avgAht = (totalAgents > 0 && totalHandleTimeSec > 0) ? Math.round(totalHandleTimeSec / totalAgents) : 0;
+ const avgLatency = (totalAgents > 0 && totalLatencyMs > 0) ? Math.round(totalLatencyMs / totalAgents) : 0;
+ const avgWrap = avgAht > 0 ? Math.round(avgAht * 0.18) : 0;
 
- if (metricGroundAht) metricGroundAht.innerText = `${avgAht}s`;
- if (metricWrapTime) metricWrapTime.innerText = `${avgWrap}s`;
- if (metricNavLatency) metricNavLatency.innerText = `${avgLatency}ms`;
+ if (metricGroundAht) metricGroundAht.innerText = avgAht > 0 ? `${avgAht}s` : "--";
+ if (metricWrapTime) metricWrapTime.innerText = avgWrap > 0 ? `${avgWrap}s` : "--";
+ if (metricNavLatency) metricNavLatency.innerText = avgLatency > 0 ? `${avgLatency}ms` : "--";
  if (metricFrictionCount) metricFrictionCount.innerText = totalFrictionIncidents.toString();
 
  if (analyticsFrictionBars) {
@@ -2164,7 +2267,8 @@ function renderAdminInsights() {
 
 if (btnExportQaCsv) {
  btnExportQaCsv.addEventListener('click', () => {
-  const agents = Object.values(liveRosterCache);
+  const now = Date.now();
+  const agents = Object.values(liveRosterCache).filter(agt => (now - (agt.lastHeartbeat || 0)) < 35000 && agt.status !== "OFFLINE");
   let csv = "Timestamp,Agent Name,Team Leader,Team Pod,Presence Status,Aux Reason,Ticket Ref,Case Title,Selected Query,Flagged Incomplete,Raw Tokens,Ground-Truth AHT (s),System Latency (ms),Stuck Field Friction\n";
   
   agents.forEach(agt => {
@@ -2177,7 +2281,7 @@ if (btnExportQaCsv) {
    const ts = new Date(agt.lastHeartbeat || Date.now()).toISOString();
    const stuckFieldInfo = tel.stuckField ? `${tel.stuckField.field} (${tel.stuckField.durationSec}s)` : 'None';
 
-   csv += `"${ts}","${agt.agentName || ''}","${tl}","${team}","${agt.status || ''}","${agt.auxReason || 'Taking Calls'}","${ac.ticketRef || ''}","${ac.caseTitle || ''}","${sq.title || ''}",${ac.flaggedIncomplete ? 'YES' : 'NO'},${ac.hasTokens ? 'YES' : 'NO'},${tel.handleTimeSec || 45},${tel.avgNavigationLatencyMs || 640},"${stuckFieldInfo}"\n`;
+   csv += `"${ts}","${agt.agentName || ''}","${tl}","${team}","${agt.status || ''}","${agt.auxReason || 'Taking Calls'}","${ac.ticketRef || ''}","${ac.caseTitle || ''}","${sq.title || ''}",${ac.flaggedIncomplete ? 'YES' : 'NO'},${ac.hasTokens ? 'YES' : 'NO'},${tel.handleTimeSec || 0},${tel.avgNavigationLatencyMs || 0},"${stuckFieldInfo}"\n`;
   });
 
   const blob = new Blob([csv], { type: "text/csv" });
@@ -2348,3 +2452,978 @@ if (btnDownloadShot) {
   a.click();
  });
 }
+
+// =========================================================================
+// TAB 4: JSON DIFF, COMPARISON & STEP MERGER ENGINE
+// =========================================================================
+let pkgA = {};
+let pkgB = {};
+let compareCurrentKey = "";
+let selectedStepsSet = new Set();
+let activePasteSide = "A";
+let isStackedLayout = false;
+
+function initCompareEngine() {
+  if (typeof allProfiles !== 'undefined' && Object.keys(allProfiles).length > 0) {
+    if (!pkgA || Object.keys(pkgA).length === 0) {
+      pkgA = JSON.parse(JSON.stringify(allProfiles));
+    }
+    if (!pkgB || Object.keys(pkgB).length === 0) {
+      pkgB = JSON.parse(JSON.stringify(originalSopBundle && Object.keys(originalSopBundle).length > 0 ? originalSopBundle : allProfiles));
+    }
+    refreshDiffView();
+  }
+
+  const loadPkgA = () => {
+    if (pkgA && Object.keys(pkgA).length > 0) {
+      return Promise.resolve(pkgA);
+    }
+    if (typeof allProfiles !== 'undefined' && Object.keys(allProfiles).length > 0) {
+      pkgA = JSON.parse(JSON.stringify(allProfiles));
+      return Promise.resolve(pkgA);
+    }
+    return new Promise(resolve => {
+      chrome.storage.local.get(["customMacroPresets"], res => {
+        const stored = res.customMacroPresets || {};
+        if (Object.keys(stored).length > 0) {
+          allProfiles = stored;
+          pkgA = JSON.parse(JSON.stringify(stored));
+          resolve(pkgA);
+        } else {
+          fetch(chrome.runtime.getURL('presets.json'))
+            .then(r => r.json())
+            .then(bundle => {
+              const data = bundle.profiles || bundle;
+              allProfiles = JSON.parse(JSON.stringify(data));
+              pkgA = JSON.parse(JSON.stringify(data));
+              resolve(pkgA);
+            })
+            .catch(() => resolve(pkgA));
+        }
+      });
+    });
+  };
+
+  const loadPkgB = () => {
+    if (pkgB && Object.keys(pkgB).length > 0) {
+      return Promise.resolve(pkgB);
+    }
+    return fetch(chrome.runtime.getURL('presets.json'))
+      .then(r => r.json())
+      .then(bundle => {
+        const data = bundle.profiles || bundle;
+        pkgB = JSON.parse(JSON.stringify(data));
+        return pkgB;
+      })
+      .catch(() => pkgB);
+  };
+
+  Promise.all([loadPkgA(), loadPkgB()]).then(() => {
+    refreshDiffView();
+  }).catch(() => {
+    refreshDiffView();
+  });
+}
+
+function calculateDiffSummary() {
+  const allKeys = new Set([...Object.keys(pkgA), ...Object.keys(pkgB)]);
+  let identicalCount = 0;
+  let diffCount = 0;
+  let onlyACount = 0;
+  let onlyBCount = 0;
+
+  const diffMap = {};
+
+  allKeys.forEach(k => {
+    const inA = !!pkgA[k];
+    const inB = !!pkgB[k];
+
+    if (inA && inB) {
+      const stepsA = pkgA[k].steps || [];
+      const stepsB = pkgB[k].steps || [];
+      const stepsMatch = JSON.stringify(stepsA) === JSON.stringify(stepsB);
+      const notesMatch = (pkgA[k].notes_template || pkgA[k].notes || "") === (pkgB[k].notes_template || pkgB[k].notes || "");
+      const titleMatch = (pkgA[k].caseTitle || "") === (pkgB[k].caseTitle || "");
+
+      if (stepsMatch && notesMatch && titleMatch) {
+        identicalCount++;
+        diffMap[k] = { status: 'SAME', stepsDiff: false, notesDiff: false };
+      } else {
+        diffCount++;
+        diffMap[k] = { status: 'DIFF', stepsDiff: !stepsMatch, notesDiff: !notesMatch };
+      }
+    } else if (inA && !inB) {
+      onlyACount++;
+      diffMap[k] = { status: 'ONLY_A', stepsDiff: true, notesDiff: true };
+    } else if (!inA && inB) {
+      onlyBCount++;
+      diffMap[k] = { status: 'ONLY_B', stepsDiff: true, notesDiff: true };
+    }
+  });
+
+  return { allKeys: Array.from(allKeys).sort(), identicalCount, diffCount, onlyACount, onlyBCount, diffMap };
+}
+
+function refreshDiffView() {
+  const summary = calculateDiffSummary();
+
+  const badgeA = document.getElementById('badge-count-pkg-a');
+  const badgeB = document.getElementById('badge-count-pkg-b');
+  if (badgeA) badgeA.innerText = `${Object.keys(pkgA).length} Presets`;
+  if (badgeB) badgeB.innerText = `${Object.keys(pkgB).length} Presets`;
+
+  const mIdentical = document.getElementById('metric-identical-count');
+  const mDiff = document.getElementById('metric-diff-count');
+  const mOnlyA = document.getElementById('metric-only-a-count');
+  const mOnlyB = document.getElementById('metric-only-b-count');
+  if (mIdentical) mIdentical.innerText = summary.identicalCount;
+  if (mDiff) mDiff.innerText = summary.diffCount;
+  if (mOnlyA) mOnlyA.innerText = summary.onlyACount;
+  if (mOnlyB) mOnlyB.innerText = summary.onlyBCount;
+
+  // Status banner
+  const banner = document.getElementById('diff-status-banner');
+  if (banner) {
+    if (summary.allKeys.length === 0) {
+      banner.style.display = 'block';
+      banner.innerHTML = `⚠️ No presets loaded. Click <b>Active Presets</b> or <b>📁 Upload</b> on Package A or B.`;
+    } else if (summary.identicalCount === summary.allKeys.length) {
+      banner.style.display = 'block';
+      banner.innerHTML = `🟢 <b>Packages A and B are currently 100% identical (${summary.identicalCount} presets).</b> Click <b>📁 Upload</b> or <b>📋 Paste</b> on Package B (or A) to compare against a different JSON file or version.`;
+    } else {
+      banner.style.display = 'block';
+      banner.innerHTML = `⚖️ <b>Differences detected:</b> ${summary.diffCount} modified preset(s) | ${summary.onlyACount} only in A | ${summary.onlyBCount} only in B.`;
+    }
+  }
+
+  const selectPreset = document.getElementById('select-compare-preset');
+  const filterVal = document.getElementById('select-compare-filter')?.value || 'ALL';
+
+  if (selectPreset) {
+    const currentVal = selectPreset.value || compareCurrentKey;
+    selectPreset.innerHTML = '';
+
+    const filteredKeys = summary.allKeys.filter(k => {
+      const info = summary.diffMap[k];
+      if (!info) return true;
+      if (filterVal === 'ALL') return true;
+      if (filterVal === 'DIFF') return info.status === 'DIFF';
+      if (filterVal === 'ONLY_A') return info.status === 'ONLY_A';
+      if (filterVal === 'ONLY_B') return info.status === 'ONLY_B';
+      if (filterVal === 'SAME') return info.status === 'SAME';
+      return true;
+    });
+
+    if (filteredKeys.length === 0) {
+      const msg = (filterVal === 'DIFF') ? '(No differences found between A and B)' : '(No presets matching filter)';
+      selectPreset.innerHTML = `<option value="">${msg}</option>`;
+      compareCurrentKey = "";
+    } else {
+      filteredKeys.forEach(k => {
+        const info = summary.diffMap[k];
+        const opt = document.createElement('option');
+        opt.value = k;
+        let prefix = "✅ [SAME]";
+        if (info.status === 'DIFF') {
+          const sA = pkgA[k]?.steps?.length || 0;
+          const sB = pkgB[k]?.steps?.length || 0;
+          prefix = `⚠️ [DIFF: ${sA} vs ${sB} steps]`;
+        } else if (info.status === 'ONLY_A') {
+          prefix = "📦 [ONLY A]";
+        } else if (info.status === 'ONLY_B') {
+          prefix = "📦 [ONLY B]";
+        }
+        opt.textContent = `${prefix} ${k}`;
+        selectPreset.appendChild(opt);
+      });
+
+      const firstDiffKey = filteredKeys.find(k => summary.diffMap[k]?.status === 'DIFF')
+                        || filteredKeys.find(k => summary.diffMap[k]?.status !== 'SAME');
+
+      if (currentVal && filteredKeys.includes(currentVal) && summary.diffMap[currentVal]?.status !== 'SAME') {
+        selectPreset.value = currentVal;
+        compareCurrentKey = currentVal;
+      } else if (firstDiffKey) {
+        selectPreset.value = firstDiffKey;
+        compareCurrentKey = firstDiffKey;
+      } else if (filteredKeys.includes(currentVal)) {
+        selectPreset.value = currentVal;
+        compareCurrentKey = currentVal;
+      } else {
+        selectPreset.value = filteredKeys[0] || '';
+        compareCurrentKey = filteredKeys[0] || '';
+      }
+    }
+  }
+
+  renderSideBySidePreset(compareCurrentKey);
+}
+
+function renderSideBySidePreset(key) {
+  const stepsListA = document.getElementById('steps-list-compare-a');
+  const stepsListB = document.getElementById('steps-list-compare-b');
+  const titleA = document.getElementById('title-preset-a');
+  const metaA = document.getElementById('meta-preset-a');
+  const stepsCountA = document.getElementById('lbl-steps-count-a');
+  const btnCloneAtoB = document.getElementById('btn-copy-whole-preset-a-to-b');
+
+  const titleB = document.getElementById('title-preset-b');
+  const metaB = document.getElementById('meta-preset-b');
+  const stepsCountB = document.getElementById('lbl-steps-count-b');
+  const btnCloneBtoA = document.getElementById('btn-copy-whole-preset-b-to-a');
+
+  if (!key) {
+    if (titleA) titleA.innerHTML = `<span style="color: var(--muted);">[A] No Preset Selected</span>`;
+    if (metaA) metaA.innerText = "Select a preset from the dropdown above to view steps.";
+    if (stepsCountA) stepsCountA.innerText = "Steps: 0";
+    if (stepsListA) stepsListA.innerHTML = '<div style="color: var(--muted); text-align: center; padding: 20px 0;">No preset selected.</div>';
+    if (btnCloneAtoB) btnCloneAtoB.style.display = 'none';
+
+    if (titleB) titleB.innerHTML = `<span style="color: var(--muted);">[B] No Preset Selected</span>`;
+    if (metaB) metaB.innerText = "Select a preset from the dropdown above to view steps.";
+    if (stepsCountB) stepsCountB.innerText = "Steps: 0";
+    if (stepsListB) stepsListB.innerHTML = '<div style="color: var(--muted); text-align: center; padding: 20px 0;">No preset selected.</div>';
+    if (btnCloneBtoA) btnCloneBtoA.style.display = 'none';
+    return;
+  }
+
+  const itemA = pkgA[key];
+  const itemB = pkgB[key];
+
+  // Render Left (Package A)
+  if (itemA) {
+    if (titleA) titleA.innerHTML = `<span style="color: var(--accent);">[A]</span> ${escapeHtml(key)}`;
+    if (metaA) {
+      const cat = escapeHtml(itemA.category || "--");
+      const caseTitle = escapeHtml(itemA.caseTitle || "--");
+      const status = escapeHtml(itemA.caseStatus || "Normal");
+      metaA.innerHTML = `<b>Title:</b> ${caseTitle} | <b>Cat:</b> ${cat} | <b>Status:</b> ${status}`;
+    }
+    const stepsA = itemA.steps || [];
+    if (stepsCountA) stepsCountA.innerText = `Steps: ${stepsA.length}`;
+    if (btnCloneAtoB) {
+      btnCloneAtoB.style.display = 'inline-block';
+      btnCloneAtoB.innerText = itemB ? '🔁 Overwrite in B' : '➕ Clone to B';
+      btnCloneAtoB.title = itemB ? 'Overwrite this preset and all steps in Package B' : 'Clone this preset into Package B';
+    }
+    renderCompareStepsContainer(stepsListA, stepsA, 'A', key);
+  } else {
+    if (titleA) titleA.innerHTML = `<span style="color: #64748b;">[A] Not in Package A</span>`;
+    if (metaA) metaA.innerHTML = `<span style="color: #f87171;">Preset "${escapeHtml(key)}" does not exist in Package A.</span>`;
+    if (stepsCountA) stepsCountA.innerText = `Steps: 0`;
+    if (btnCloneAtoB) btnCloneAtoB.style.display = 'none';
+    if (stepsListA) {
+      stepsListA.innerHTML = `
+        <div style="text-align: center; padding: 20px 0; color: var(--muted);">
+          <button id="btn-create-a-from-b-preset" class="btn-action" style="background: rgba(0, 214, 143, 0.2); border: 1px solid var(--accent); color: var(--accent); font-size: 9.5px; padding: 5px 10px;">
+            ➕ Clone "${escapeHtml(key)}" into Package A
+          </button>
+        </div>
+      `;
+      document.getElementById('btn-create-a-from-b-preset')?.addEventListener('click', () => {
+        if (itemB) {
+          pkgA[key] = JSON.parse(JSON.stringify(itemB));
+          refreshDiffView();
+        }
+      });
+    }
+  }
+
+  // Render Right (Package B)
+  if (itemB) {
+    if (titleB) titleB.innerHTML = `<span style="color: var(--highlight);">[B]</span> ${escapeHtml(key)}`;
+    if (metaB) {
+      const cat = escapeHtml(itemB.category || "--");
+      const caseTitle = escapeHtml(itemB.caseTitle || "--");
+      const status = escapeHtml(itemB.caseStatus || "Normal");
+      metaB.innerHTML = `<b>Title:</b> ${caseTitle} | <b>Cat:</b> ${cat} | <b>Status:</b> ${status}`;
+    }
+    const stepsB = itemB.steps || [];
+    if (stepsCountB) stepsCountB.innerText = `Steps: ${stepsB.length}`;
+    if (btnCloneBtoA) {
+      btnCloneBtoA.style.display = 'inline-block';
+      btnCloneBtoA.innerText = itemA ? '🔁 Overwrite in A' : '➕ Clone to A';
+      btnCloneBtoA.title = itemA ? 'Overwrite this preset and all steps in Package A' : 'Clone this preset into Package A';
+    }
+    renderCompareStepsContainer(stepsListB, stepsB, 'B', key);
+  } else {
+    if (titleB) titleB.innerHTML = `<span style="color: #64748b;">[B] Not in Package B</span>`;
+    if (metaB) metaB.innerHTML = `<span style="color: #f87171;">Preset "${escapeHtml(key)}" does not exist in Package B.</span>`;
+    if (stepsCountB) stepsCountB.innerText = `Steps: 0`;
+    if (btnCloneBtoA) btnCloneBtoA.style.display = 'none';
+    if (stepsListB) {
+      stepsListB.innerHTML = `
+        <div style="text-align: center; padding: 20px 0; color: var(--muted);">
+          <button id="btn-create-b-from-a-preset" class="btn-action" style="background: rgba(0, 163, 224, 0.2); border: 1px solid var(--highlight); color: var(--highlight); font-size: 9.5px; padding: 5px 10px;">
+            ➕ Clone "${escapeHtml(key)}" into Package B
+          </button>
+        </div>
+      `;
+      document.getElementById('btn-create-b-from-a-preset')?.addEventListener('click', () => {
+        if (itemA) {
+          pkgB[key] = JSON.parse(JSON.stringify(itemA));
+          refreshDiffView();
+        }
+      });
+    }
+  }
+}
+
+function renderCompareStepsContainer(container, steps, side, presetKey) {
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!steps || steps.length === 0) {
+    container.innerHTML = `<div style="color: var(--muted); text-align: center; padding: 15px 0;">No steps recorded in this preset.</div>`;
+    return;
+  }
+
+  steps.forEach((step, idx) => {
+    const row = document.createElement('div');
+    const isStepSelected = selectedStepsSet.has(`${side}:${idx}`);
+
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 6px;
+      background: ${isStepSelected ? 'rgba(124, 58, 237, 0.25)' : 'rgba(255,255,255,0.02)'};
+      border: 1px solid ${isStepSelected ? '#7c3aed' : 'rgba(255,255,255,0.06)'};
+      border-radius: 4px;
+      transition: all 0.15s;
+    `;
+
+    let actBadge = `<span style="font-size: 7.5px; background: #334155; color: #f1f5f9; padding: 1px 3px; border-radius: 2px;">${(step.action || 'ACT').toUpperCase()}</span>`;
+    if (step.action === 'input') {
+      actBadge = `<span style="font-size: 7.5px; background: rgba(2, 132, 199, 0.3); color: #38bdf8; border: 1px solid #0284c7; padding: 1px 3px; border-radius: 2px;">INPUT</span>`;
+    } else if (step.action === 'select') {
+      actBadge = `<span style="font-size: 7.5px; background: rgba(5, 150, 105, 0.3); color: #34d399; border: 1px solid #059669; padding: 1px 3px; border-radius: 2px;">SELECT</span>`;
+    } else if (step.action === 'wait_input' || step.action === 'pause') {
+      actBadge = `<span style="font-size: 7.5px; background: rgba(124, 58, 237, 0.3); color: #c4b5fd; border: 1px solid #7c3aed; padding: 1px 3px; border-radius: 2px;">PAUSE</span>`;
+    }
+
+    const rawTarget = step.fieldName || (step.target ? step.target.split(' > ').pop() : 'Field');
+    const targetLabel = escapeHtml(rawTarget);
+
+    let valStr = "";
+    if (step.action === 'input') {
+      const rawVal = String(step.inputValue !== undefined && step.inputValue !== null ? step.inputValue : '');
+      valStr = `: <span style="color: var(--highlight); font-weight: bold;">"${escapeHtml(rawVal.slice(0, 24))}"</span>`;
+    } else if (step.action === 'select') {
+      const rawChoice = String(step.savedOptionChoice !== undefined && step.savedOptionChoice !== null ? step.savedOptionChoice : '');
+      valStr = `: <span style="color: var(--accent); font-weight: bold;">"${escapeHtml(rawChoice.slice(0, 24))}"</span>`;
+    }
+
+    row.innerHTML = `
+      <input type="checkbox" class="chk-step-select" data-side="${side}" data-index="${idx}" ${isStepSelected ? 'checked' : ''} style="margin: 0; cursor: pointer;">
+      <span style="font-weight: bold; color: var(--muted); font-size: 8px; width: 14px;">#${idx + 1}</span>
+      ${actBadge}
+      <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 8.5px;" title="${escapeHtml(step.target || '')}">
+        ${targetLabel}${valStr}
+      </span>
+      <div style="display: flex; gap: 3px; flex-shrink: 0;">
+        ${side === 'A' ? `
+          <button type="button" class="btn-step-copy-to-other" data-side="A" data-index="${idx}" style="background: rgba(0, 163, 224, 0.2); border: 1px solid #0284c7; color: #38bdf8; font-size: 7.5px; padding: 2px 5px; border-radius: 2px; cursor: pointer;" title="Copy step to Package B">➡️ B</button>
+          <button type="button" class="btn-step-move-to-other" data-side="A" data-index="${idx}" style="background: rgba(124, 58, 237, 0.2); border: 1px solid #7c3aed; color: #c4b5fd; font-size: 7.5px; padding: 2px 5px; border-radius: 2px; cursor: pointer;" title="Move step to Package B (cut from A)">✂️ B</button>
+        ` : `
+          <button type="button" class="btn-step-copy-to-other" data-side="B" data-index="${idx}" style="background: rgba(0, 214, 143, 0.2); border: 1px solid #059669; color: #34d399; font-size: 7.5px; padding: 2px 5px; border-radius: 2px; cursor: pointer;" title="Copy step to Package A">⬅️ A</button>
+          <button type="button" class="btn-step-move-to-other" data-side="B" data-index="${idx}" style="background: rgba(124, 58, 237, 0.2); border: 1px solid #7c3aed; color: #c4b5fd; font-size: 7.5px; padding: 2px 5px; border-radius: 2px; cursor: pointer;" title="Move step to Package A (cut from B)">✂️ A</button>
+        `}
+        <button type="button" class="btn-step-copy-json" data-side="${side}" data-index="${idx}" style="background: transparent; border: 1px solid #475569; color: #94a3b8; font-size: 8px; padding: 2px 4px; border-radius: 2px; cursor: pointer;" title="Copy step JSON to clipboard">📋</button>
+        <button type="button" class="btn-step-delete" data-side="${side}" data-index="${idx}" style="background: transparent; border: 1px solid #ef4444; color: #f87171; font-size: 8px; padding: 2px 4px; border-radius: 2px; cursor: pointer;" title="Delete this step">🗑️</button>
+      </div>
+    `;
+
+    row.querySelector('.chk-step-select')?.addEventListener('change', (e) => {
+      const sKey = `${side}:${idx}`;
+      if (e.target.checked) {
+        selectedStepsSet.add(sKey);
+      } else {
+        selectedStepsSet.delete(sKey);
+      }
+      updateSelectedStepsBadge();
+    });
+
+    row.querySelector('.btn-step-copy-to-other')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      transferSingleStep(presetKey, side, idx, false);
+    });
+
+    row.querySelector('.btn-step-move-to-other')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      transferSingleStep(presetKey, side, idx, true);
+    });
+
+    row.querySelector('.btn-step-copy-json')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const stepJson = JSON.stringify(step, null, 2);
+      navigator.clipboard.writeText(stepJson).then(() => {
+        e.target.innerText = "✓";
+        setTimeout(() => { e.target.innerText = "📋"; }, 1200);
+      });
+    });
+
+    row.querySelector('.btn-step-delete')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pkg = side === 'A' ? pkgA : pkgB;
+      if (pkg[presetKey] && pkg[presetKey].steps) {
+        pkg[presetKey].steps.splice(idx, 1);
+        selectedStepsSet.clear();
+        updateSelectedStepsBadge();
+        refreshDiffView();
+      }
+    });
+
+    container.appendChild(row);
+  });
+}
+
+function transferSingleStep(presetKey, fromSide, stepIndex, isMove) {
+  const fromPkg = fromSide === 'A' ? pkgA : pkgB;
+  const toPkg = fromSide === 'A' ? pkgB : pkgA;
+
+  if (!fromPkg[presetKey] || !fromPkg[presetKey].steps || !fromPkg[presetKey].steps[stepIndex]) return;
+
+  const stepToCopy = JSON.parse(JSON.stringify(fromPkg[presetKey].steps[stepIndex]));
+
+  if (!toPkg[presetKey]) {
+    toPkg[presetKey] = {
+      ...JSON.parse(JSON.stringify(fromPkg[presetKey])),
+      steps: []
+    };
+  }
+  if (!toPkg[presetKey].steps) toPkg[presetKey].steps = [];
+
+  toPkg[presetKey].steps.push(stepToCopy);
+
+  if (isMove) {
+    fromPkg[presetKey].steps.splice(stepIndex, 1);
+  }
+
+  selectedStepsSet.clear();
+  updateSelectedStepsBadge();
+  refreshDiffView();
+}
+
+function copyAllStepsBetweenSides(fromSide) {
+  if (!compareCurrentKey) {
+    alert("Please select a preset to compare first.");
+    return;
+  }
+  const fromPkg = fromSide === 'A' ? pkgA : pkgB;
+  const toPkg = fromSide === 'A' ? pkgB : pkgA;
+  const fromLabel = fromSide === 'A' ? 'Package A' : 'Package B';
+  const toLabel = fromSide === 'A' ? 'Package B' : 'Package A';
+
+  if (!fromPkg[compareCurrentKey] || !fromPkg[compareCurrentKey].steps || fromPkg[compareCurrentKey].steps.length === 0) {
+    alert(`No steps found in ${fromLabel} for "${compareCurrentKey}".`);
+    return;
+  }
+
+  if (!toPkg[compareCurrentKey]) {
+    toPkg[compareCurrentKey] = {
+      ...JSON.parse(JSON.stringify(fromPkg[compareCurrentKey])),
+      steps: []
+    };
+  }
+
+  toPkg[compareCurrentKey].steps = JSON.parse(JSON.stringify(fromPkg[compareCurrentKey].steps));
+  selectedStepsSet.clear();
+  updateSelectedStepsBadge();
+  refreshDiffView();
+  alert(`Copied all ${toPkg[compareCurrentKey].steps.length} steps from ${fromLabel} into ${toLabel} for "${compareCurrentKey}"!`);
+}
+
+function updateSelectedStepsBadge() {
+  const btn = document.getElementById('btn-create-new-from-steps');
+  const count = selectedStepsSet.size;
+  if (btn) {
+    btn.innerHTML = `✨ Create New Preset from Selected Steps (${count})`;
+  }
+  const summaryLbl = document.getElementById('lbl-create-steps-summary');
+  if (summaryLbl) {
+    summaryLbl.innerText = `${count} step${count !== 1 ? 's' : ''} currently selected`;
+  }
+}
+
+function getSelectedStepsObjects() {
+  const steps = [];
+  selectedStepsSet.forEach(sKey => {
+    const [side, idxStr] = sKey.split(':');
+    const idx = parseInt(idxStr, 10);
+    const pkg = side === 'A' ? pkgA : pkgB;
+    if (pkg[compareCurrentKey] && pkg[compareCurrentKey].steps && pkg[compareCurrentKey].steps[idx]) {
+      steps.push(JSON.parse(JSON.stringify(pkg[compareCurrentKey].steps[idx])));
+    }
+  });
+  return steps;
+}
+
+function handlePackageFileUpload(file, side) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      let raw = evt.target.result;
+      if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+      const data = JSON.parse(raw);
+      let bundle = data.profiles || data.customMacroPresets || data.presets || data;
+      if (Array.isArray(bundle)) {
+        const obj = {};
+        bundle.forEach((p, i) => {
+          const k = p.disposition || p.caseTitle || p.name || p.title || p.id || `Preset_${i + 1}`;
+          obj[k] = p;
+        });
+        bundle = obj;
+      }
+      if (side === 'A') {
+        pkgA = bundle;
+      } else {
+        pkgB = bundle;
+      }
+      selectedStepsSet.clear();
+      updateSelectedStepsBadge();
+      refreshDiffView();
+      alert(`Loaded ${Object.keys(bundle).length} presets into Package ${side} from file!`);
+    } catch(err) {
+      alert("Invalid JSON file: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Wire Tab 4 controls
+document.getElementById('select-compare-preset')?.addEventListener('change', (e) => {
+  compareCurrentKey = e.target.value;
+  selectedStepsSet.clear();
+  updateSelectedStepsBadge();
+  renderSideBySidePreset(compareCurrentKey);
+});
+
+document.getElementById('select-compare-filter')?.addEventListener('change', () => {
+  refreshDiffView();
+});
+
+document.getElementById('btn-load-a-active')?.addEventListener('click', () => {
+  if (typeof allProfiles !== 'undefined' && Object.keys(allProfiles).length > 0) {
+    pkgA = JSON.parse(JSON.stringify(allProfiles));
+  } else {
+    chrome.storage.local.get(["customMacroPresets"], res => {
+      pkgA = JSON.parse(JSON.stringify(res.customMacroPresets || {}));
+      selectedStepsSet.clear();
+      updateSelectedStepsBadge();
+      refreshDiffView();
+      alert(`Loaded ${Object.keys(pkgA).length} presets from Active Workspace into Package A.`);
+    });
+    return;
+  }
+  selectedStepsSet.clear();
+  updateSelectedStepsBadge();
+  refreshDiffView();
+  alert(`Loaded ${Object.keys(pkgA).length} presets from Active Workspace into Package A.`);
+});
+
+document.getElementById('btn-load-b-default')?.addEventListener('click', () => {
+  fetch(chrome.runtime.getURL('presets.json'))
+    .then(r => r.json())
+    .then(data => {
+      const bundle = data.profiles || data;
+      pkgB = JSON.parse(JSON.stringify(bundle));
+      selectedStepsSet.clear();
+      updateSelectedStepsBadge();
+      refreshDiffView();
+      alert(`Loaded ${Object.keys(pkgB).length} presets from Default Suite into Package B.`);
+    })
+    .catch(err => {
+      alert("Error loading default presets: " + err.message);
+    });
+});
+
+// Direct button triggers for upload file inputs
+document.getElementById('btn-upload-file-pkg-a')?.addEventListener('click', () => {
+  const inp = document.getElementById('input-file-pkg-a');
+  if (inp) {
+    inp.value = '';
+    inp.click();
+  }
+});
+
+document.getElementById('btn-upload-file-pkg-b')?.addEventListener('click', () => {
+  const inp = document.getElementById('input-file-pkg-b');
+  if (inp) {
+    inp.value = '';
+    inp.click();
+  }
+});
+
+document.getElementById('input-file-pkg-a')?.addEventListener('change', (e) => {
+  handlePackageFileUpload(e.target.files[0], 'A');
+});
+
+document.getElementById('input-file-pkg-b')?.addEventListener('change', (e) => {
+  handlePackageFileUpload(e.target.files[0], 'B');
+});
+
+// Drag and drop onto Package cards
+['card-compare-a', 'card-compare-b'].forEach(cardId => {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const side = cardId === 'card-compare-a' ? 'A' : 'B';
+  card.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    card.style.borderColor = side === 'A' ? 'var(--accent)' : 'var(--highlight)';
+  });
+  card.addEventListener('dragleave', () => {
+    card.style.borderColor = 'var(--border-soft)';
+  });
+  card.addEventListener('drop', (e) => {
+    e.preventDefault();
+    card.style.borderColor = 'var(--border-soft)';
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handlePackageFileUpload(e.dataTransfer.files[0], side);
+    }
+  });
+});
+
+// Swap and Clear B
+document.getElementById('btn-swap-packages')?.addEventListener('click', () => {
+  const temp = pkgA;
+  pkgA = pkgB;
+  pkgB = temp;
+  selectedStepsSet.clear();
+  updateSelectedStepsBadge();
+  refreshDiffView();
+  alert("Swapped Package A and Package B!");
+});
+
+document.getElementById('btn-clear-pkg-b')?.addEventListener('click', () => {
+  if (confirm("Clear Package B so you can load an external JSON?")) {
+    pkgB = {};
+    selectedStepsSet.clear();
+    updateSelectedStepsBadge();
+    refreshDiffView();
+  }
+});
+
+// Toggle Stacked vs Side-by-Side layout
+document.getElementById('btn-toggle-layout-view')?.addEventListener('click', () => {
+  const workspace = document.getElementById('compare-workspace');
+  const btn = document.getElementById('btn-toggle-layout-view');
+  if (!workspace || !btn) return;
+  isStackedLayout = !isStackedLayout;
+  if (isStackedLayout) {
+    workspace.style.gridTemplateColumns = '1fr';
+    btn.innerHTML = '↔️ Side-by-Side View';
+    btn.title = 'Switch to 2-column Side-by-Side layout';
+  } else {
+    workspace.style.gridTemplateColumns = '1fr 1fr';
+    btn.innerHTML = '↕️ Stacked View';
+    btn.title = 'Switch to full-width Stacked layout';
+  }
+});
+
+const modalPastePkg = document.getElementById('modal-paste-package-json');
+const titlePastePkg = document.getElementById('title-paste-package-modal');
+const txtPastePkg = document.getElementById('txt-paste-package-json');
+
+document.getElementById('btn-paste-json-a')?.addEventListener('click', () => {
+  activePasteSide = 'A';
+  if (titlePastePkg) titlePastePkg.innerText = "📋 Paste Full JSON into Package A";
+  if (txtPastePkg) txtPastePkg.value = "";
+  if (modalPastePkg) modalPastePkg.style.display = "flex";
+});
+
+document.getElementById('btn-paste-json-b')?.addEventListener('click', () => {
+  activePasteSide = 'B';
+  if (titlePastePkg) titlePastePkg.innerText = "📋 Paste Full JSON into Package B";
+  if (txtPastePkg) txtPastePkg.value = "";
+  if (modalPastePkg) modalPastePkg.style.display = "flex";
+});
+
+document.getElementById('btn-cancel-paste-package')?.addEventListener('click', () => {
+  if (modalPastePkg) modalPastePkg.style.display = "none";
+});
+
+document.getElementById('btn-save-paste-package')?.addEventListener('click', () => {
+  let raw = txtPastePkg?.value.trim() || "";
+  if (!raw) return;
+  try {
+    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+    const data = JSON.parse(raw);
+    let bundle = data.profiles || data;
+    if (Array.isArray(bundle)) {
+      const obj = {};
+      bundle.forEach((p, i) => {
+        const k = p.disposition || p.caseTitle || p.name || `Preset_${i + 1}`;
+        obj[k] = p;
+      });
+      bundle = obj;
+    }
+    if (activePasteSide === 'A') {
+      pkgA = bundle;
+    } else {
+      pkgB = bundle;
+    }
+    if (modalPastePkg) modalPastePkg.style.display = "none";
+    selectedStepsSet.clear();
+    updateSelectedStepsBadge();
+    refreshDiffView();
+    alert(`Loaded ${Object.keys(bundle).length} presets into Package ${activePasteSide}!`);
+  } catch(err) {
+    alert("Invalid JSON: " + err.message);
+  }
+});
+
+document.getElementById('btn-copy-all-a-to-b')?.addEventListener('click', () => {
+  copyAllStepsBetweenSides('A');
+});
+
+document.getElementById('btn-copy-all-b-to-a')?.addEventListener('click', () => {
+  copyAllStepsBetweenSides('B');
+});
+
+document.getElementById('btn-copy-whole-preset-a-to-b')?.addEventListener('click', () => {
+  if (compareCurrentKey && pkgA[compareCurrentKey]) {
+    pkgB[compareCurrentKey] = JSON.parse(JSON.stringify(pkgA[compareCurrentKey]));
+    refreshDiffView();
+    alert(`Copied entire preset "${compareCurrentKey}" to Package B!`);
+  }
+});
+
+document.getElementById('btn-copy-whole-preset-b-to-a')?.addEventListener('click', () => {
+  if (compareCurrentKey && pkgB[compareCurrentKey]) {
+    pkgA[compareCurrentKey] = JSON.parse(JSON.stringify(pkgB[compareCurrentKey]));
+    refreshDiffView();
+    alert(`Copied entire preset "${compareCurrentKey}" to Package A!`);
+  }
+});
+
+document.getElementById('btn-select-all-steps-a')?.addEventListener('click', () => {
+  const stepsA = pkgA[compareCurrentKey]?.steps || [];
+  const allInASelected = stepsA.every((_, idx) => selectedStepsSet.has(`A:${idx}`));
+  stepsA.forEach((_, idx) => {
+    if (allInASelected) {
+      selectedStepsSet.delete(`A:${idx}`);
+    } else {
+      selectedStepsSet.add(`A:${idx}`);
+    }
+  });
+  updateSelectedStepsBadge();
+  renderSideBySidePreset(compareCurrentKey);
+});
+
+document.getElementById('btn-select-all-steps-b')?.addEventListener('click', () => {
+  const stepsB = pkgB[compareCurrentKey]?.steps || [];
+  const allInBSelected = stepsB.every((_, idx) => selectedStepsSet.has(`B:${idx}`));
+  stepsB.forEach((_, idx) => {
+    if (allInBSelected) {
+      selectedStepsSet.delete(`B:${idx}`);
+    } else {
+      selectedStepsSet.add(`B:${idx}`);
+    }
+  });
+  updateSelectedStepsBadge();
+  renderSideBySidePreset(compareCurrentKey);
+});
+
+const modalPasteRawSteps = document.getElementById('modal-paste-raw-steps');
+const txtPasteRawSteps = document.getElementById('txt-paste-raw-steps');
+
+document.getElementById('btn-open-paste-modal-a')?.addEventListener('click', () => {
+  activePasteSide = 'A';
+  if (txtPasteRawSteps) txtPasteRawSteps.value = "";
+  if (modalPasteRawSteps) modalPasteRawSteps.style.display = "flex";
+});
+
+document.getElementById('btn-open-paste-modal-b')?.addEventListener('click', () => {
+  activePasteSide = 'B';
+  if (txtPasteRawSteps) txtPasteRawSteps.value = "";
+  if (modalPasteRawSteps) modalPasteRawSteps.style.display = "flex";
+});
+
+document.getElementById('btn-cancel-paste-steps')?.addEventListener('click', () => {
+  if (modalPasteRawSteps) modalPasteRawSteps.style.display = "none";
+});
+
+document.getElementById('btn-save-paste-steps')?.addEventListener('click', () => {
+  let raw = txtPasteRawSteps?.value.trim() || "";
+  if (!raw) return;
+  try {
+    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+    let parsed = JSON.parse(raw);
+    let stepsArr = Array.isArray(parsed) ? parsed : [parsed];
+    const mode = document.querySelector('input[name="paste-steps-mode"]:checked')?.value || "APPEND";
+
+    const targetPkg = activePasteSide === 'A' ? pkgA : pkgB;
+    if (!targetPkg[compareCurrentKey]) {
+      targetPkg[compareCurrentKey] = {
+        disposition: compareCurrentKey,
+        caseTitle: compareCurrentKey.toUpperCase(),
+        department: "UIF",
+        steps: []
+      };
+    }
+    if (!targetPkg[compareCurrentKey].steps) targetPkg[compareCurrentKey].steps = [];
+
+    if (mode === "REPLACE") {
+      targetPkg[compareCurrentKey].steps = stepsArr;
+    } else {
+      targetPkg[compareCurrentKey].steps.push(...stepsArr);
+    }
+
+    if (modalPasteRawSteps) modalPasteRawSteps.style.display = "none";
+    selectedStepsSet.clear();
+    updateSelectedStepsBadge();
+    refreshDiffView();
+    alert(`Imported ${stepsArr.length} steps into ${compareCurrentKey} in Package ${activePasteSide}!`);
+  } catch(err) {
+    alert("Invalid Steps JSON: " + err.message);
+  }
+});
+
+const modalCreateFromSteps = document.getElementById('modal-create-from-steps');
+const inputNewFromStepsKey = document.getElementById('input-new-from-steps-key');
+const inputNewFromStepsTitle = document.getElementById('input-new-from-steps-title');
+const inputNewFromStepsCat = document.getElementById('input-new-from-steps-cat');
+const selectNewFromStepsTarget = document.getElementById('select-new-from-steps-target');
+
+document.getElementById('btn-create-new-from-steps')?.addEventListener('click', () => {
+  let steps = getSelectedStepsObjects();
+  if (steps.length === 0) {
+    if (pkgA[compareCurrentKey]?.steps?.length > 0) {
+      pkgA[compareCurrentKey].steps.forEach((_, idx) => selectedStepsSet.add(`A:${idx}`));
+    } else if (pkgB[compareCurrentKey]?.steps?.length > 0) {
+      pkgB[compareCurrentKey].steps.forEach((_, idx) => selectedStepsSet.add(`B:${idx}`));
+    } else {
+      alert("Please select steps using the checkboxes or choose a preset that contains steps.");
+      return;
+    }
+    updateSelectedStepsBadge();
+    steps = getSelectedStepsObjects();
+  }
+
+  if (inputNewFromStepsKey) inputNewFromStepsKey.value = compareCurrentKey ? `${compareCurrentKey} (Custom)` : "New Custom Preset";
+  if (inputNewFromStepsTitle) inputNewFromStepsTitle.value = compareCurrentKey ? `${compareCurrentKey.toUpperCase()} CUSTOM` : "CUSTOM ENQUIRY";
+  if (inputNewFromStepsCat) inputNewFromStepsCat.value = pkgA[compareCurrentKey]?.category || pkgB[compareCurrentKey]?.category || "General Inquiries";
+  
+  if (modalCreateFromSteps) modalCreateFromSteps.style.display = "flex";
+});
+
+document.getElementById('btn-cancel-new-from-steps')?.addEventListener('click', () => {
+  if (modalCreateFromSteps) modalCreateFromSteps.style.display = "none";
+});
+
+document.getElementById('btn-save-new-from-steps')?.addEventListener('click', () => {
+  const newKey = inputNewFromStepsKey?.value.trim();
+  if (!newKey) {
+    alert("Please enter a Preset Title / Key.");
+    return;
+  }
+  const newTitle = inputNewFromStepsTitle?.value.trim() || newKey.toUpperCase();
+  const newCat = inputNewFromStepsCat?.value.trim() || "General Inquiries";
+  const targetSave = selectNewFromStepsTarget?.value || "BOTH_AND_ACTIVE";
+
+  const collectedSteps = getSelectedStepsObjects();
+
+  const newPresetObj = {
+    disposition: newKey,
+    caseTitle: newTitle,
+    category: newCat,
+    subCategory: "Custom Workflow",
+    issues: "Standard Procedure",
+    caseStatus: "Resolved",
+    caseMode: "Normal",
+    department: "UIF",
+    tat: "Immediate FCR",
+    notes_template: `QUERY: Customer inquiry regarding ${newKey}.\nSTATUS: Verified and processed.\nADVICE: Concluded as First Call Resolution.`,
+    steps: collectedSteps
+  };
+
+  if (targetSave === "PKG_A" || targetSave === "BOTH_AND_ACTIVE") {
+    pkgA[newKey] = JSON.parse(JSON.stringify(newPresetObj));
+  }
+  if (targetSave === "PKG_B" || targetSave === "BOTH_AND_ACTIVE") {
+    pkgB[newKey] = JSON.parse(JSON.stringify(newPresetObj));
+  }
+  if (targetSave === "BOTH_AND_ACTIVE") {
+    allProfiles[newKey] = JSON.parse(JSON.stringify(newPresetObj));
+    saveCurrentProfiles();
+    populateCategoryDropdown();
+    renderProfileDropdown();
+    renderFilteredChips();
+  }
+
+  selectedStepsSet.clear();
+  updateSelectedStepsBadge();
+  if (modalCreateFromSteps) modalCreateFromSteps.style.display = "none";
+
+  compareCurrentKey = newKey;
+  refreshDiffView();
+  alert(`Successfully created preset "${newKey}" with ${collectedSteps.length} steps!`);
+});
+
+document.getElementById('btn-apply-a-to-workspace')?.addEventListener('click', () => {
+  if (Object.keys(pkgA).length === 0) {
+    alert("Package A is empty.");
+    return;
+  }
+  if (confirm(`Apply all ${Object.keys(pkgA).length} presets from Package A as your active workspace?`)) {
+    allProfiles = JSON.parse(JSON.stringify(pkgA));
+    saveCurrentProfiles();
+    populateCategoryDropdown();
+    renderProfileDropdown();
+    renderFilteredChips();
+    alert(`Active Admin Workspace updated with ${Object.keys(allProfiles).length} presets!`);
+  }
+});
+
+document.getElementById('btn-apply-b-to-workspace')?.addEventListener('click', () => {
+  if (Object.keys(pkgB).length === 0) {
+    alert("Package B is empty.");
+    return;
+  }
+  if (confirm(`Apply all ${Object.keys(pkgB).length} presets from Package B as your active workspace?`)) {
+    allProfiles = JSON.parse(JSON.stringify(pkgB));
+    saveCurrentProfiles();
+    populateCategoryDropdown();
+    renderProfileDropdown();
+    renderFilteredChips();
+    alert(`Active Admin Workspace updated with ${Object.keys(allProfiles).length} presets!`);
+  }
+});
+
+document.getElementById('btn-export-diff-json')?.addEventListener('click', () => {
+  const allKeys = new Set([...Object.keys(pkgA), ...Object.keys(pkgB)]);
+  const mergedProfiles = {};
+  allKeys.forEach(k => {
+    const itemA = pkgA[k];
+    const itemB = pkgB[k];
+    if (itemA && itemB) {
+      const p = { ...itemB, ...itemA };
+      if ((!itemA.steps || itemA.steps.length === 0) && itemB.steps && itemB.steps.length > 0) {
+        p.steps = itemB.steps;
+      }
+      mergedProfiles[k] = p;
+    } else if (itemA) {
+      mergedProfiles[k] = itemA;
+    } else {
+      mergedProfiles[k] = itemB;
+    }
+  });
+
+  const exportPackage = {
+    package: "SmartTicketAutoCloser",
+    role: "ADMIN_MERGED_EXPORT",
+    version: "2.2.0",
+    createdAt: new Date().toISOString(),
+    profiles: mergedProfiles
+  };
+
+  const blob = new Blob([JSON.stringify(exportPackage, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `DEL_CRM_MERGED_PRESETS_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});

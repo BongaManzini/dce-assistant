@@ -235,21 +235,18 @@ function updateConnectionUI(connected, resData = null, siteLabel = "") {
   isConnectedToDCE = connected;
   if (connected) {
     dceConnectionBadge.className = "status-badge-connected";
-    
-    chrome.storage.local.get(["dce_agent_name", "dce_live_roster"], (res) => {
-      const agentName = (resData && resData.agentName && resData.agentName !== "Unknown Agent") ? resData.agentName : (res.dce_agent_name || "Molly Sharon Xaba");
+
+    chrome.storage.local.get(["dce_agent_name", "dce_live_roster", "dce_master_roster_mapping"], (res) => {
+      const agentName = (resData && resData.agentName && resData.agentName !== "Unknown Agent")
+        ? resData.agentName
+        : (res.dce_agent_name || "Unknown Agent");
+
       const roster = Object.values(res.dce_live_roster || {});
       const activeAgents = roster.filter(a => a.status !== "OFFLINE" && (Date.now() - (a.lastHeartbeat || 0)) < 35000);
-      
-      const DEFAULT_TL_MAPPING = {
-        "Molly Sharon Xaba": { tl: "Sipho Dlamini", team: "Claims Escalations" },
-        "Kagiso Molefe": { tl: "Sipho Dlamini", team: "Claims Escalations" },
-        "Thabo Ndlovu": { tl: "Lerato Khumalo", team: "Online Support & Portals" },
-        "Nandi Zuma": { tl: "Lerato Khumalo", team: "Online Support & Portals" },
-        "Bongani Sithole": { tl: "Daniel Sithole", team: "Registration & Compliance" }
-      };
 
-      const myMeta = DEFAULT_TL_MAPPING[agentName] || { tl: "Unassigned TL", team: "General Contact Centre" };
+      // TL/team from master roster mapping (set by supervisor CSV import or admin)
+      const rosterMap = res.dce_master_roster_mapping || {};
+      const myMeta = rosterMap[agentName] || { tl: "Unassigned TL", team: "General Contact Centre" };
       const myTl = myMeta.tl || "Unassigned TL";
       const teamCount = activeAgents.filter(a => (a.teamLeader || a.tl || "Unassigned TL") === myTl).length || 1;
 
@@ -257,6 +254,7 @@ function updateConnectionUI(connected, resData = null, siteLabel = "") {
       if (siteLabel) connText += ` [${siteLabel}]`;
       dceConnectionBadge.innerText = connText;
     });
+
 
     if (resData) {
       if (lblAgentName && resData.agentName && resData.agentName !== "Unknown Agent") {
@@ -300,8 +298,23 @@ function updateConnectionUI(connected, resData = null, siteLabel = "") {
 
       const micBadge = document.getElementById('mic-guard-badge');
       if (micBadge) {
-        const isMicBlocked = (resData.micGuardStatus === 'BLOCKED') || (resData.auxReason && resData.auxReason.toLowerCase().includes('microphone'));
-        if (isMicBlocked) {
+        const mgStatus = resData.micGuardStatus || (resData.auxReason && resData.auxReason.toLowerCase().includes('microphone') ? 'BLOCKED' : 'HEALTHY');
+        if (mgStatus === 'ONE_WAY_AUDIO') {
+          micBadge.style.background = '#713f12';
+          micBadge.style.color = '#fde047';
+          micBadge.style.borderColor = '#eab308';
+          micBadge.innerText = 'WARNING (ONE-WAY AUDIO)';
+        } else if (mgStatus === 'DEVICE_DISCONNECTED') {
+          micBadge.style.background = '#7f1d1d';
+          micBadge.style.color = '#fca5a5';
+          micBadge.style.borderColor = '#ef4444';
+          micBadge.innerText = 'DISCONNECTED (DEVICE MISSING)';
+        } else if (mgStatus === 'MUTED') {
+          micBadge.style.background = '#78350f';
+          micBadge.style.color = '#fed7aa';
+          micBadge.style.borderColor = '#f97316';
+          micBadge.innerText = 'MUTED (HARDWARE/OS)';
+        } else if (mgStatus === 'BLOCKED') {
           micBadge.style.background = '#7f1d1d';
           micBadge.style.color = '#fecaca';
           micBadge.style.borderColor = '#ef4444';
@@ -313,14 +326,19 @@ function updateConnectionUI(connected, resData = null, siteLabel = "") {
           micBadge.innerText = 'GUARDING (HEALTHY)';
         }
       }
+
+      if (resData && resData.latestCall) {
+        updateLatestCallUI(resData.latestCall);
+      }
     }
   } else {
     dceConnectionBadge.className = "status-badge-disconnected";
     dceConnectionBadge.innerText = siteLabel ? `DISCONNECTED (${siteLabel})` : "DISCONNECTED";
     chrome.storage.local.get(["dce_agent_name"], (res) => {
-      const fallbackName = res.dce_agent_name || "Molly Sharon Xaba";
+      const fallbackName = res.dce_agent_name || "Unknown Agent";
       if (lblAgentName) lblAgentName.innerText = `Agent: ${fallbackName} (Offline)`;
     });
+
     if (lblTelephonyPresence) {
       lblTelephonyPresence.style.background = '#334155';
       lblTelephonyPresence.style.color = '#cbd5e1';
@@ -445,34 +463,42 @@ function initializeAgentWorkspace() {
       chkDisableModals.checked = res.disableModals;
     }
 
+    loadCallHistoryFromStorage();
+
     fetch(chrome.runtime.getURL('presets.json'))
       .then(r => r.json())
       .then(defaultBundle => {
         const bundle = defaultBundle.profiles || defaultBundle;
         originalSopBundle = { ...bundle };
         const storedPresets = res.agentMasterPresets || {};
-        const isUpgradeNeeded = !res.agentSopVersion || res.agentSopVersion !== "5.1" || Object.keys(storedPresets).length < 63;
+        const isUpgradeNeeded = !res.agentSopVersion || res.agentSopVersion !== "6.0" || Object.keys(storedPresets).length < Object.keys(bundle).length;
 
         if (isUpgradeNeeded || Object.keys(storedPresets).length === 0) {
           allProfiles = { ...bundle };
           Object.keys(storedPresets).forEach(key => {
             if (storedPresets[key].steps && storedPresets[key].steps.length > 0) {
               if (allProfiles[key]) {
-                allProfiles[key].steps = storedPresets[key].steps;
+                // If bundle has no steps for this preset, adopt the stored steps
+                if (!allProfiles[key].steps || allProfiles[key].steps.length === 0) {
+                  allProfiles[key].steps = storedPresets[key].steps;
+                }
               } else {
+                // Custom user preset not in standard bundle
                 allProfiles[key] = storedPresets[key];
               }
+            } else if (!allProfiles[key]) {
+              allProfiles[key] = storedPresets[key];
             }
           });
           chrome.storage.local.set({
             agentMasterPresets: allProfiles,
-            agentSopVersion: "5.1",
-            agentPackageDate: "01/10/2024 (v5.1 Multi-Dept)"
+            agentSopVersion: "6.0",
+            agentPackageDate: "2026/09/29 (v6.0 Master Suite)"
           });
-          if (lblPackageVer) lblPackageVer.innerText = `Package: DEL Multi-Dept Suite (${Object.keys(allProfiles).length} Presets)`;
+          if (lblPackageVer) lblPackageVer.innerText = `Package: DEL Multi-Dept Master Suite (${Object.keys(allProfiles).length} Presets)`;
         } else {
           allProfiles = storedPresets;
-          if (lblPackageVer) lblPackageVer.innerText = `Package: DEL Multi-Dept Suite (${Object.keys(allProfiles).length} Presets)`;
+          if (lblPackageVer) lblPackageVer.innerText = `Package: DEL Multi-Dept Master Suite (${Object.keys(allProfiles).length} Presets)`;
         }
 
         populateCategoryDropdown();
@@ -835,23 +861,88 @@ btnModalConfirm.addEventListener('click', () => {
   }
 });
 
-function triggerPresetExecution(key, item) {
-  selectedQuery = {
-    key,
-    title: item.caseTitle || key,
-    issue: item.issue || item.category || getNormalizedCategory(item)
-  };
-  isCurrentTicketFlagged = false;
-  if (btnFlagIncomplete) {
-    btnFlagIncomplete.style.backgroundColor = '#d97706';
-    btnFlagIncomplete.innerText = 'Flag Incomplete';
+// ================= TOKEN FILL-IN MODAL FOR REQUIRED [DATE] / [NUMBER] =================
+const modalTokenFill = document.getElementById('modal-token-fill');
+const tokenFillFields = document.getElementById('token-fill-fields');
+const btnTokenFillConfirm = document.getElementById('btn-token-fill-confirm');
+const btnTokenFillCancel = document.getElementById('btn-token-fill-cancel');
+
+let onTokenConfirmCallback = null;
+
+function promptAgentTokenFill(rawTemplate, hasDateToken, hasNumberToken, onConfirm) {
+  if (!modalTokenFill || !tokenFillFields) {
+    onConfirm(rawTemplate, todayFormatted, formatDateToStandard(todayFormatted), "");
+    return;
   }
-  sendMessageToActiveTab({ action: "SET_SELECTED_QUERY", query: selectedQuery });
 
-  let newNote = item.notes_template || item.notes || `QUERY: ${key}`;
-  const chosenDateFormatted = formatDateToStandard(rfpCalendarInput ? rfpCalendarInput.value : todayFormatted);
-  newNote = newNote.replace(/\[Insert Date\]|\[DATE\]/gi, chosenDateFormatted);
+  tokenFillFields.innerHTML = '';
 
+  if (hasDateToken) {
+    const dateRow = document.createElement('div');
+    dateRow.innerHTML = `
+      <label style="font-size: 10px; font-weight: bold; color: var(--accent); display: block; margin-bottom: 3px;">
+        📅 Required Date (Replaces [DATE]):
+      </label>
+      <input type="date" id="input-token-date-val" class="dropdown" style="width: 100%; padding: 5px; font-size: 11px; background: var(--code-bg); color: var(--text); border: 1px solid var(--border-soft); border-radius: 4px;" value="${todayFormatted}">
+    `;
+    tokenFillFields.appendChild(dateRow);
+  }
+
+  if (hasNumberToken) {
+    const numRow = document.createElement('div');
+    numRow.innerHTML = `
+      <label style="font-size: 10px; font-weight: bold; color: var(--highlight); display: block; margin-bottom: 3px;">
+        🔢 Required Number / Reference (Replaces [NUMBER]):
+      </label>
+      <input type="text" id="input-token-num-val" class="dropdown" style="width: 100%; padding: 5px; font-size: 11px; background: var(--code-bg); color: var(--text); border: 1px solid var(--border-soft); border-radius: 4px;" placeholder="Enter number / ID / claim reference...">
+    `;
+    tokenFillFields.appendChild(numRow);
+  }
+
+  onTokenConfirmCallback = () => {
+    let filled = rawTemplate;
+    let chosenDateIso = todayFormatted;
+    let chosenDateStd = formatDateToStandard(todayFormatted);
+    let chosenNumber = "";
+
+    if (hasDateToken) {
+      const dateInp = document.getElementById('input-token-date-val');
+      chosenDateIso = dateInp && dateInp.value ? dateInp.value : todayFormatted;
+      chosenDateStd = formatDateToStandard(chosenDateIso);
+      filled = filled.replace(/\[DATE\]|\[Insert Date\]/gi, chosenDateStd);
+    }
+    if (hasNumberToken) {
+      const numInp = document.getElementById('input-token-num-val');
+      chosenNumber = numInp && numInp.value.trim() ? numInp.value.trim() : "";
+      if (chosenNumber) {
+        filled = filled.replace(/\[(?:ID[ _]?)?NUMBER\]|\[REF[ _]?NUMBER\]|\[AMOUNT\]/gi, chosenNumber);
+      }
+    }
+    modalTokenFill.style.display = 'none';
+    onConfirm(filled, chosenDateIso, chosenDateStd, chosenNumber);
+  };
+
+  modalTokenFill.style.display = 'flex';
+
+  setTimeout(() => {
+    const firstInput = tokenFillFields.querySelector('input');
+    if (firstInput) firstInput.focus();
+  }, 100);
+}
+
+btnTokenFillConfirm?.addEventListener('click', () => {
+  if (onTokenConfirmCallback) {
+    onTokenConfirmCallback();
+    onTokenConfirmCallback = null;
+  }
+});
+
+btnTokenFillCancel?.addEventListener('click', () => {
+  if (modalTokenFill) modalTokenFill.style.display = 'none';
+  onTokenConfirmCallback = null;
+});
+
+function applyNoteToStaging(key, item, newNote, customSteps = null) {
   if (chkMultiQuery && chkMultiQuery.checked) {
     queryCount++;
     const divider = `\n\n==================== [ QUERY #${queryCount}: ${item.caseTitle || key} ] ====================\n`;
@@ -871,13 +962,67 @@ function triggerPresetExecution(key, item) {
   // Render SOP v5.1 Live Guidance Card
   renderSopGuidanceCard(key, item);
 
-  if (item.steps && item.steps.length > 0) {
+  const stepsToPlay = customSteps || item.steps;
+  if (stepsToPlay && stepsToPlay.length > 0) {
     if (isAutoStepEnabled) {
       updateUIState("RUNNING");
-      sendMessageToActiveTab({ action: "PLAY_STEPS", steps: item.steps });
+      sendMessageToActiveTab({ action: "PLAY_STEPS", steps: stepsToPlay });
     } else {
       updateUIState("READY");
     }
+  }
+}
+
+function triggerPresetExecution(key, item) {
+  selectedQuery = {
+    key,
+    title: item.caseTitle || key,
+    issue: item.issue || item.category || getNormalizedCategory(item)
+  };
+  isCurrentTicketFlagged = false;
+  if (btnFlagIncomplete) {
+    btnFlagIncomplete.style.backgroundColor = '#d97706';
+    btnFlagIncomplete.innerText = 'Flag Incomplete';
+  }
+  sendMessageToActiveTab({ action: "SET_SELECTED_QUERY", query: selectedQuery });
+
+  let rawTemplate = item.notes_template || item.notes || `QUERY: ${key}`;
+
+  const stepsHaveDate = Array.isArray(item.steps) && item.steps.some(s => /\[DATE\]|\[Insert Date\]/i.test(s.inputValue || "") || (/date/i.test(s.fieldName || "") && s.requiresInput));
+  const stepsHaveNumber = Array.isArray(item.steps) && item.steps.some(s => /\[(?:ID[ _]?)?NUMBER\]|\[REF[ _]?NUMBER\]/i.test(s.inputValue || "") || (/number|claim|ref|amount|id/i.test(s.fieldName || "") && s.requiresInput));
+
+  const hasDateToken = /\[DATE\]|\[Insert Date\]/i.test(rawTemplate) || stepsHaveDate;
+  const hasNumberToken = /\[(?:ID[ _]?)?NUMBER\]|\[REF[ _]?NUMBER\]|\[AMOUNT\]/i.test(rawTemplate) || stepsHaveNumber;
+
+  if (hasDateToken || hasNumberToken) {
+    promptAgentTokenFill(rawTemplate, hasDateToken, hasNumberToken, (filledNote, chosenDateIso, chosenDateStd, chosenNumber) => {
+      let resolvedSteps = null;
+      if (Array.isArray(item.steps) && item.steps.length > 0) {
+        resolvedSteps = item.steps.map(step => {
+          let s = { ...step };
+          if (s.action === "input") {
+            if (/\[DATE\]|\[Insert Date\]/i.test(s.inputValue || "")) {
+              s.inputValue = chosenDateIso;
+              s.requiresInput = false;
+            } else if (hasDateToken && /date/i.test(s.fieldName || "") && s.requiresInput) {
+              s.inputValue = chosenDateIso;
+              s.requiresInput = false;
+            }
+            if (chosenNumber && /\[(?:ID[ _]?)?NUMBER\]|\[REF[ _]?NUMBER\]|\[AMOUNT\]/i.test(s.inputValue || "")) {
+              s.inputValue = chosenNumber;
+              s.requiresInput = false;
+            } else if (chosenNumber && hasNumberToken && /number|claim|ref|id/i.test(s.fieldName || "") && s.requiresInput) {
+              s.inputValue = chosenNumber;
+              s.requiresInput = false;
+            }
+          }
+          return s;
+        });
+      }
+      applyNoteToStaging(key, item, filledNote, resolvedSteps);
+    });
+  } else {
+    applyNoteToStaging(key, item, rawTemplate);
   }
 }
 
@@ -962,6 +1107,146 @@ if (btnInsertDocsToNotes) {
     }
   });
 }
+
+// ================= CALL WRAP-UP DIAGNOSTICS & DISCONNECTION LOG =================
+const toggleCallDiagPanel = document.getElementById("toggle-call-diag-panel");
+const callDiagContentBox = document.getElementById("call-diag-content-box");
+const iconToggleCallDiag = document.getElementById("icon-toggle-call-diag");
+const badgeLatestCallTerm = document.getElementById("badge-latest-call-term");
+const callDiagEmptyMsg = document.getElementById("call-diag-empty-msg");
+const callDiagDetailsBox = document.getElementById("call-diag-details-box");
+const diagCallDuration = document.getElementById("diag-call-duration");
+const diagCallTermby = document.getElementById("diag-call-termby");
+const diagCallRootcause = document.getElementById("diag-call-rootcause");
+const diagCallHeadset = document.getElementById("diag-call-headset");
+const diagCallTime = document.getElementById("diag-call-time");
+const btnStampCallDiag = document.getElementById("btn-stamp-call-diag");
+const btnViewCallHistory = document.getElementById("btn-view-call-history");
+const callHistoryDrawer = document.getElementById("call-history-drawer");
+
+let cachedLatestCall = null;
+let cachedCallHistory = [];
+
+function updateLatestCallUI(callSummary) {
+  if (!callSummary || !callSummary.durationFormatted) return;
+  cachedLatestCall = callSummary;
+
+  if (callDiagEmptyMsg) callDiagEmptyMsg.style.display = "none";
+  if (callDiagDetailsBox) callDiagDetailsBox.style.display = "block";
+
+  if (diagCallDuration) diagCallDuration.innerText = callSummary.durationFormatted;
+  if (diagCallTermby) diagCallTermby.innerText = callSummary.terminatedBy;
+  if (diagCallRootcause) diagCallRootcause.innerText = callSummary.rootCause;
+  if (diagCallHeadset) diagCallHeadset.innerText = `Mic: ${callSummary.headset || 'Headset'}`;
+  if (diagCallTime) diagCallTime.innerText = callSummary.timestamp || new Date().toLocaleTimeString();
+
+  if (badgeLatestCallTerm) {
+    const isAbnormal = callSummary.category !== 'NORMAL_CLIENT' && callSummary.category !== 'NORMAL_AGENT';
+    badgeLatestCallTerm.innerText = isAbnormal ? "ABNORMAL DROP" : "CLEAN CALL";
+    badgeLatestCallTerm.style.background = isAbnormal ? "#7f1d1d" : "#064e3b";
+    badgeLatestCallTerm.style.color = isAbnormal ? "#fca5a5" : "#6ee7b7";
+    badgeLatestCallTerm.style.borderColor = isAbnormal ? "#ef4444" : "#059669";
+  }
+}
+
+function renderCallHistoryDrawer() {
+  if (!callHistoryDrawer) return;
+  callHistoryDrawer.innerHTML = "";
+
+  if (cachedCallHistory.length === 0) {
+    callHistoryDrawer.innerHTML = '<div style="color:var(--muted); font-size:8.5px; padding:3px;">No completed calls recorded yet.</div>';
+    return;
+  }
+
+  cachedCallHistory.slice(0, 10).forEach((call, index) => {
+    const isAbnormal = call.category !== 'NORMAL_CLIENT' && call.category !== 'NORMAL_AGENT';
+    const row = document.createElement("div");
+    row.style.cssText = `
+      background: var(--code-bg);
+      border: 1px solid ${isAbnormal ? '#ef4444' : 'var(--border-soft)'};
+      border-radius: 3px;
+      padding: 4px 6px;
+      font-size: 8.5px;
+      line-height: 1.3;
+    `;
+
+    row.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+        <b style="color:${isAbnormal ? '#fca5a5' : '#38bdf8'};">#${index + 1} • ${call.durationFormatted}</b>
+        <span style="color:var(--muted); font-size:8px;">${call.timestamp || ''}</span>
+      </div>
+      <div style="color:var(--text); font-size:8px; margin-bottom:1px;">
+        <b>By:</b> ${call.terminatedBy}
+      </div>
+      <div style="color:${isAbnormal ? '#fde68a' : 'var(--muted)'}; font-size:8px;">
+        ${call.rootCause}
+      </div>
+    `;
+    callHistoryDrawer.appendChild(row);
+  });
+}
+
+function loadCallHistoryFromStorage() {
+  chrome.storage.local.get(["dce_call_history", "dce_latest_call"], (res) => {
+    cachedCallHistory = res.dce_call_history || [];
+    if (res.dce_latest_call) {
+      updateLatestCallUI(res.dce_latest_call);
+    } else if (cachedCallHistory.length > 0) {
+      updateLatestCallUI(cachedCallHistory[0]);
+    }
+    if (btnViewCallHistory) {
+      btnViewCallHistory.innerText = `History (${cachedCallHistory.length})`;
+    }
+  });
+}
+
+if (toggleCallDiagPanel) {
+  toggleCallDiagPanel.addEventListener("click", () => {
+    const isHidden = callDiagContentBox.style.display === "none";
+    callDiagContentBox.style.display = isHidden ? "block" : "none";
+    if (iconToggleCallDiag) iconToggleCallDiag.innerText = isHidden ? "[v]" : "[>]";
+  });
+}
+
+if (btnViewCallHistory) {
+  btnViewCallHistory.addEventListener("click", () => {
+    const isHidden = callHistoryDrawer.style.display === "none";
+    callHistoryDrawer.style.display = isHidden ? "flex" : "none";
+    if (isHidden) renderCallHistoryDrawer();
+  });
+}
+
+if (btnStampCallDiag) {
+  btnStampCallDiag.addEventListener("click", () => {
+    if (!cachedLatestCall) {
+      alert("No completed call recorded yet to stamp.");
+      return;
+    }
+    const auditText = `\n\n[CALL DISCONNECTION AUDIT]\n- Call Duration: ${cachedLatestCall.durationFormatted}\n- Disconnected By: ${cachedLatestCall.terminatedBy}\n- Root Cause: ${cachedLatestCall.rootCause}\n- Microphone Used: ${cachedLatestCall.headset || 'Headset'}\n- Time: ${cachedLatestCall.timestamp || new Date().toLocaleTimeString()}`;
+    if (txtCallNotes) {
+      txtCallNotes.value += auditText;
+      updateTextCounters();
+      chrome.storage.local.set({ currentDraftNotes: txtCallNotes.value });
+      if (copyFeedback) {
+        copyFeedback.innerText = "Call Audit Stamped!";
+        copyFeedback.style.display = 'inline';
+        setTimeout(() => { copyFeedback.style.display = 'none'; }, 1500);
+      }
+    }
+  });
+}
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "local" && changes.dce_latest_call) {
+    updateLatestCallUI(changes.dce_latest_call.newValue);
+  }
+  if (areaName === "local" && changes.dce_call_history) {
+    cachedCallHistory = changes.dce_call_history.newValue || [];
+    if (btnViewCallHistory) {
+      btnViewCallHistory.innerText = `History (${cachedCallHistory.length})`;
+    }
+  }
+});
 
 // ================= INBOUND CALLER VERIFICATION (SOP 1.2) =================
 const toggleVerificationPanel = document.getElementById('toggle-verification-panel');
@@ -1793,11 +2078,36 @@ async function updateReportActiveSiteInfo() {
   }
 }
 
+const btnDownloadAudioDiag = document.getElementById('btn-download-audio-diag');
+
 if (btnOpenReportIssue) {
   btnOpenReportIssue.addEventListener('click', () => {
     if (modalReportIssue) modalReportIssue.style.display = 'flex';
     updateReportActiveSiteInfo();
     captureActiveTabScreenshot();
+
+    // Check if recent audio diagnostic issues occurred and auto-populate
+    chrome.storage.local.get(["dce_audio_diagnostics"], (res) => {
+      const diags = res.dce_audio_diagnostics || [];
+      const hasRecentAudioFault = diags.some(d => 
+        d.type === 'DEVICE_DISCONNECTED' || 
+        d.type === 'GUM_ERROR' || 
+        d.type === 'RTP_FLATLINE' || 
+        d.type === 'TRACK_MUTED'
+      );
+
+      if (hasRecentAudioFault && selectIssueCategory && (!txtIssueDetails.value || txtIssueDetails.value.trim().length === 0)) {
+        selectIssueCategory.value = "TELEPHONY_NETWORK";
+        if (selectSupportEmail) selectSupportEmail.value = "it.helpdesk@alteram.co.za";
+        
+        const faultEvents = diags.slice(0, 3).map(e => {
+          const detailStr = e.details ? JSON.stringify(e.details) : '';
+          return `* [${new Date(e.epoch || Date.now()).toLocaleTimeString()}] ${e.type}: ${detailStr}`;
+        }).join('\n');
+
+        txtIssueDetails.value = `[Auto-Detected Telephony / Audio Issue]\nAgent reported call audio / mic drop.\nRecent Sentinel Events:\n${faultEvents}\n\nPlease inspect headset USB hardware and softphone WebRTC media connection.`;
+      }
+    });
   });
 }
 
@@ -1845,11 +2155,13 @@ function buildStructuredReportBody() {
   const siteText = reportActiveSiteLbl ? reportActiveSiteLbl.innerText : "Active Site";
   const details = txtIssueDetails ? txtIssueDetails.value.trim() : "No additional description provided.";
   const agentName = (typeof lblAgentName !== 'undefined' && lblAgentName) ? lblAgentName.innerText : "Frontline Operator";
+  const micState = document.getElementById('mic-guard-badge') ? document.getElementById('mic-guard-badge').innerText : "N/A";
 
   return `[DCE ISSUE & SUPPORT REPORT]
 Reported By: ${agentName}
 Target Component: ${categoryText}
 Active Website: ${siteText}
+Mic Guard Sentinel: ${micState}
 Timestamp: ${new Date().toLocaleString()}
 
 ISSUE DETAILS & DESCRIPTION:
@@ -1900,6 +2212,26 @@ if (btnDownloadShot) {
   });
 }
 
+if (btnDownloadAudioDiag) {
+  btnDownloadAudioDiag.addEventListener('click', () => {
+    chrome.storage.local.get(["dce_audio_diagnostics", "dce_agent_name"], (res) => {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        agent: res.dce_agent_name || (lblAgentName ? lblAgentName.innerText : "Unknown"),
+        micGuardStatus: document.getElementById('mic-guard-badge') ? document.getElementById('mic-guard-badge').innerText : "UNKNOWN",
+        telephonyPresence: lblTelephonyPresence ? lblTelephonyPresence.innerText : "UNKNOWN",
+        diagnosticsHistory: res.dce_audio_diagnostics || []
+      };
 
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `DCE_Audio_Diagnostics_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  });
+}
 
 initializeAgentWorkspace();

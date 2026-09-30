@@ -494,6 +494,56 @@
     <button id="btn-resume-macro-panel" class="btn-action" style="background: #10b981; color: white; width: 100%; font-weight: bold; padding: 6px; font-size: 10.5px; border: 1px solid #34d399; cursor: pointer; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);">Resume Macro Execution
     </button></div>
 
+  <!-- ================= LATEST CALL DIAGNOSTICS & DISCONNECTION LOG ================= -->
+  <div id="section-call-diagnostics" class="section-box" style="border-left-color: #0284c7; background: var(--bg-card); display: block;">
+    <div class="section-title" style="cursor: pointer;" id="toggle-call-diag-panel">
+      <span style="display: flex; align-items: center; gap: 5px; color: #38bdf8;">
+        📞 Call Wrap-Up Diagnostics
+      </span>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span id="badge-latest-call-term" style="font-size: 8px; background: #064e3b; color: #6ee7b7; padding: 1px 5px; border-radius: 3px; font-weight: bold; border: 1px solid #059669;">
+          READY
+        </span>
+        <span id="icon-toggle-call-diag" style="font-size: 9px; color: var(--muted);">[v]</span>
+      </div>
+    </div>
+
+    <div id="call-diag-content-box" style="display: block; font-size: 9px;">
+      <div id="call-diag-empty-msg" style="color: var(--muted); font-size: 8.5px; padding: 2px 0;">
+        Make or receive a call in DCE. The sentinel automatically tracks call duration, who hung up, and the exact root cause.
+      </div>
+
+      <div id="call-diag-details-box" style="display: none; background: var(--code-bg); padding: 5px 6px; border-radius: 4px; border: 1px solid var(--border-soft); margin-bottom: 5px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+          <span style="color: var(--muted); font-size: 8.5px;">Duration: <b id="diag-call-duration" style="color: #38bdf8;">--</b></span>
+          <span style="color: var(--muted); font-size: 8.5px;">Terminated By: <b id="diag-call-termby" style="color: #ffffff;">--</b></span>
+        </div>
+        <div style="color: #f1f5f9; font-size: 8.5px; line-height: 1.35; margin-bottom: 4px;" id="diag-call-rootcause-box">
+          <span style="color: var(--muted);">Root Cause:</span> <span id="diag-call-rootcause" style="font-weight: 600;">--</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 8px; color: var(--muted); border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 3px;">
+          <span id="diag-call-headset">Mic: Headset</span>
+          <span id="diag-call-time">--:--:--</span>
+        </div>
+      </div>
+
+      <!-- Action: 1-Click Stamp Call Diagnostic to Notes -->
+      <div style="display: flex; gap: 4px;">
+        <button id="btn-stamp-call-diag" class="btn-action" style="flex: 1; background: #0284c7; color: white; padding: 3px 5px; font-size: 8.5px; font-weight: bold;" title="Stamp call duration and disconnection audit into call notes">
+          Stamp Call Audit to Notes
+        </button>
+        <button id="btn-view-call-history" class="btn-action" style="flex: 0 0 75px; background: #334155; color: white; padding: 3px 5px; font-size: 8.5px;" title="View list of recent calls and reasons">
+          History (0)
+        </button>
+      </div>
+
+      <!-- Call History Drawer -->
+      <div id="call-history-drawer" style="display: none; max-height: 120px; overflow-y: auto; margin-top: 5px; padding: 4px; background: var(--bg-main); border: 1px solid var(--border-soft); border-radius: 4px; flex-direction: column; gap: 3px;">
+        <!-- Dynamic call history items -->
+      </div>
+    </div>
+  </div>
+
   <!-- Ticket History Lookup -->
   <div class="section-box">
     <div class="section-title">
@@ -773,30 +823,18 @@
     <div class="section-title">
       <span>Call Notes Staging Area</span><span id="copy-feedback" style="color: #4ade80; font-size: 10px; display: none;">Copied!</span></div>
 
-    <!-- Smart Token & Number Dropdown Toolbar -->
-    <div class="smart-token-toolbar" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; background: var(--code-bg); padding: 6px; border-radius: 6px; border: 1px solid var(--border-soft);">
-      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: var(--muted); font-weight: bold;">
-        <span>Number, Token & Date Insert:</span>
-      </div>
-      <div style="display: flex; gap: 4px; align-items: center;">
-        <select id="select-number-dropdown" class="dropdown" style="flex: 1; font-size: 9.5px; padding: 3px 5px;">
-          <option value="" disabled selected>-- Select Number / Token / Date --</option>
-          <option value="[NUMBER]">[NUMBER] Dynamic Number</option>
-          <option value="[ID_NUMBER]">[ID_NUMBER] SA ID Number</option>
-          <option value="[REF_NUMBER]">[REF_NUMBER] Claim Reference</option>
-          <option value="[AMOUNT]">[AMOUNT] Benefit Amount</option>
-          <option value="[W.CL_FORM]">[W.CL_FORM] CF Form</option>
-          <option value="TODAY">Today's Date</option>
-          <option value="+7DAYS">+7 Days Date</option>
-          <option value="1000">1000</option>
-          <option value="5000">5000</option>
-          <option value="10000">10000</option>
-          <option value="CUSTOM">Custom Input Field...</option>
-        </select>
-        <input type="text" id="input-custom-number" placeholder="Enter custom value..." style="flex: 1; display: none; background: var(--bg-card); color: var(--text); border: 1px solid var(--border-soft); border-radius: 4px; padding: 3px 6px; font-size: 9.5px;">
-        <button id="btn-insert-number-val" class="btn-action" style="flex: 0 0 55px; background: #0284c7; font-size: 9.5px; padding: 3px 6px;" title="Insert selected number or token into call notes">Insert</button>
+    <!-- Token Fill-In Modal (shown when a preset has [DATE] or [NUMBER] tokens) -->
+    <div id="modal-token-fill" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(7,19,29,0.88); z-index:2147483646; justify-content:center; align-items:center;">
+      <div style="background:var(--bg-card); border:1px solid var(--accent); border-radius:8px; padding:14px 16px; width:88%; max-width:340px; box-shadow:0 4px 20px rgba(0,0,0,0.6);">
+        <div style="font-size:11px; font-weight:bold; color:var(--accent); margin-bottom:10px;">Fill in Required Fields</div>
+        <div id="token-fill-fields" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <div style="display:flex; gap:6px; margin-top:12px;">
+          <button id="btn-token-fill-confirm" class="btn-action" style="flex:1; background:#059669; font-weight:bold; padding:6px;">Confirm &amp; Fill Notes</button>
+          <button id="btn-token-fill-cancel" class="btn-action" style="flex:0 0 60px; background:#475569; padding:6px;">Cancel</button>
+        </div>
       </div>
     </div>
+
 
     <!-- Flagged Fix Reminder & Straight-to-Save Action Bar (Directly on top of Notes Log) -->
     <div id="flagged-fix-reminder" style="display: none; background: #7f1d1d; border: 1px solid #ef4444; border-radius: 6px; padding: 8px; margin-bottom: 8px;">
@@ -923,7 +961,8 @@
       <div style="display: flex; gap: 5px; flex-wrap: wrap;">
         <button id="btn-send-email-report" class="btn-action" style="flex: 1; background: #0284c7; color: white; font-weight: bold; padding: 5px; font-size: 9.5px;" title="Open email client with report text pre-filled">Open Email
         </button><button id="btn-copy-report-text" class="btn-action" style="flex: 1; background: #059669; color: white; font-weight: bold; padding: 5px; font-size: 9.5px;" title="Copy issue report and screenshot info">Copy Report
-        </button><button id="btn-download-shot" class="btn-action" style="flex: 0 0 60px; background: #475569; color: white; padding: 5px; font-size: 9px;" title="Download PNG screenshot file">PNG
+        </button><button id="btn-download-shot" class="btn-action" style="flex: 0 0 60px; background: #475569; color: white; padding: 5px; font-size: 9.5px;" title="Download PNG screenshot file">PNG
+        </button><button id="btn-download-audio-diag" class="btn-action" style="flex: 1 1 100%; background: #6366f1; color: white; font-weight: bold; padding: 5px; font-size: 9px; margin-top: 4px;" title="Download WebRTC & Audio Telemetry JSON dump for IT / Telephony Admin">Download Audio Diagnostics (.JSON)
         </button></div>
       
     </div>

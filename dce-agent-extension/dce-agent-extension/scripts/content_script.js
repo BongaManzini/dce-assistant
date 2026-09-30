@@ -109,14 +109,59 @@ function saveDetectedAgentName(name) {
 
 // Scrapes the agent's full name from the DEL CRM header bar or browser storage
 function scrapeAgentNameFromTopBar() {
-  // 1. Try Storage (localStorage/sessionStorage JSON or keys)
+  // 1. Real CRM selectors — DEL CRM uses Angular with ngbdropdown user dropdown in header
+  //    The name sits in: div.user[ngbdropdown] > span (direct child span)
+  //    NEVER target _ngcontent-* attributes — Angular generates those dynamically per session
+
+  const realCrmSelectors = [
+    'div.user[ngbdropdown] > span',
+    '.user.col.dropdown > span',
+    '.user.dropdown > span',
+    '[ngbdropdown].user > span'
+  ];
+
+  for (const selector of realCrmSelectors) {
+    try {
+      const el = document.querySelector(selector);
+      if (el) {
+        const raw = (el.innerText || el.textContent || '').trim();
+        const clean = cleanPersonName(raw);
+        if (isLikelyPersonName(clean)) {
+          saveDetectedAgentName(clean);
+          return clean;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2. Email fallback — .dropdown-header contains "molly.xaba@alteram.co.za"
+  //    Extract the part before "@" and convert to title case as approximate name
+  try {
+    const dropHeader = document.querySelector('.header-account-dropdown .dropdown-header, [ngbdropdownmenu] .dropdown-header');
+    if (dropHeader) {
+      const emailMatch = (dropHeader.innerText || dropHeader.textContent || '').match(/([a-zA-Z0-9._%+-]+)@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      if (emailMatch) {
+        // e.g. "molly.xaba" -> "Molly Xaba"
+        const derived = emailMatch[1]
+          .split('.')
+          .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+          .join(' ');
+        if (isLikelyPersonName(derived)) {
+          saveDetectedAgentName(derived);
+          return derived;
+        }
+      }
+    }
+  } catch (e) {}
+
+  // 3. Try Storage (localStorage/sessionStorage JSON or keys)
   const storageName = getAgentNameFromStorage();
   if (storageName && isLikelyPersonName(storageName)) {
     saveDetectedAgentName(storageName);
     return storageName;
   }
 
-  // 2. Comprehensive DOM Selectors for Angular, alteram CRM, Dynamics & Bootstrap top bars
+  // 4. Broad DOM selector sweep (legacy fallback)
   const possibleSelectors = [
     'app-header [class*="user" i]',
     'app-topbar [class*="user" i]',
@@ -133,10 +178,7 @@ function scrapeAgentNameFromTopBar() {
     '[class*="user-profile" i]',
     '[class*="profile-name" i]',
     '[class*="header-user" i]',
-    '[aria-label*="user" i]',
-    '[aria-label*="profile" i]',
     '.dropdown-toggle span',
-    '.dropdown-toggle',
     'header [class*="profile" i]',
     'header [class*="user" i]',
     'nav [class*="profile" i]',
@@ -146,18 +188,20 @@ function scrapeAgentNameFromTopBar() {
   ];
 
   for (const selector of possibleSelectors) {
-    const elements = document.querySelectorAll(selector);
-    for (const el of elements) {
-      const raw = el.innerText || el.textContent || "";
-      const clean = cleanPersonName(raw);
-      if (isLikelyPersonName(clean)) {
-        saveDetectedAgentName(clean);
-        return clean;
+    try {
+      const elements = document.querySelectorAll(selector);
+      for (const el of elements) {
+        const raw = el.innerText || el.textContent || "";
+        const clean = cleanPersonName(raw);
+        if (isLikelyPersonName(clean)) {
+          saveDetectedAgentName(clean);
+          return clean;
+        }
       }
-    }
+    } catch (e) {}
   }
 
-  // 3. Fallback: Search all textual elements inside header/nav for full name matches (2-4 capitalized words)
+  // 5. Fallback: Search all textual elements inside header/nav for full name pattern
   const headerContainer = document.querySelector('app-header, app-topbar, app-navbar, header, .navbar, .top-header, nav, .top-bar');
   if (headerContainer) {
     const fullText = headerContainer.innerText || headerContainer.textContent || "";
@@ -172,23 +216,14 @@ function scrapeAgentNameFromTopBar() {
     }
   }
 
-  // 4. Search entire document for "Welcome, [Name]", "Logged in as [Name]", "Hi, [Name]"
-  const bodyText = document.body ? document.body.innerText || "" : "";
-  const welcomeMatch = bodyText.match(/(?:Welcome|Logged in as|Hi|Hello|Agent)\s*,?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})/i);
-  if (welcomeMatch && welcomeMatch[1] && isLikelyPersonName(welcomeMatch[1])) {
-    const name = cleanPersonName(welcomeMatch[1]);
-    saveDetectedAgentName(name);
-    return name;
-  }
-
-  // 5. Fallback to cached agent name from memory / storage
+  // 6. Fallback to cached agent name from memory / storage
   if (cachedAgentName && cachedAgentName !== "Unknown Agent") {
     return cachedAgentName;
   }
 
-  // 6. Default Roster Fallback (Molly Sharon Xaba)
-  return "Molly Sharon Xaba";
+  return "Unknown Agent";
 }
+
 
 // Known DEL CRM Telephony Aux / Pause Reason Codes (from CRM screenshot & CTI bar)
 const KNOWN_AUX_REASONS = [
@@ -208,15 +243,134 @@ const KNOWN_AUX_REASONS = [
   "christest"
 ];
 
-let micGuardState = "HEALTHY";
+// --- AUDIO HEALTH SENTINEL ENGINE (TELEPHONY & WEBRTC WATCHDOG) ---
+const AUDIO_DIAGNOSTICS_MAX = 50;
+let recentAudioDiagnostics = [];
+let micGuardState = "HEALTHY"; // "HEALTHY" | "BLOCKED" | "DEVICE_DISCONNECTED" | "ONE_WAY_AUDIO" | "MUTED"
 let micGuardLastReportedState = "HEALTHY";
+let micGuardDetailMessage = "";
+let lastCompletedCallSummary = null;
 
-// --- MIC GUARD ENGINE ---
-function triggerMicGuardBlocked(reasonDetail) {
-  if (micGuardState === "BLOCKED" && micGuardLastReportedState === "BLOCKED") return;
-  micGuardState = "BLOCKED";
-  micGuardLastReportedState = "BLOCKED";
-  renderMicGuardBanner(true, reasonDetail);
+function showCallWrapUpToast(callSummary) {
+  try {
+    const existing = document.getElementById('dce-call-wrapup-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'dce-call-wrapup-toast';
+    const isAbnormal = callSummary.category !== 'NORMAL_CLIENT' && callSummary.category !== 'NORMAL_AGENT';
+    const borderColor = isAbnormal ? '#ef4444' : '#10b981';
+    const badgeBg = isAbnormal ? '#7f1d1d' : '#064e3b';
+    const badgeColor = isAbnormal ? '#fca5a5' : '#6ee7b7';
+    const termColor = isAbnormal ? '#fca5a5' : '#38bdf8';
+
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0b1523;
+      color: #ffffff;
+      border: 2px solid ${borderColor};
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7), 0 0 14px ${isAbnormal ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.2)'};
+      z-index: 2147483646;
+      padding: 12px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
+      width: 320px;
+      box-sizing: border-box;
+    `;
+
+    toast.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">
+        <span style="font-weight:800; font-size:11.5px; color:${termColor};">📞 CALL ENDED (${callSummary.durationFormatted})</span>
+        <button id="btn-close-wrapup-toast" style="background:none; border:none; color:#94a3b8; font-size:12px; cursor:pointer; padding:0 3px;">✕</button>
+      </div>
+      <div style="margin-bottom:5px; font-size:10.5px;">
+        <span style="color:#94a3b8;">Disconnected By:</span> <b style="color:#ffffff;">${callSummary.terminatedBy}</b>
+      </div>
+      <div style="margin-bottom:6px; font-size:10px; line-height:1.35; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; border-left:2px solid ${borderColor};">
+        <b>Root Cause:</b> ${callSummary.rootCause}
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; color:#64748b;">
+        <span>Mic: ${callSummary.headset || 'Headset'}</span>
+        <span style="color:#10b981;">Auto-logged to DCE Assistant</span>
+      </div>
+    `;
+
+    document.body.appendChild(toast);
+    toast.querySelector('#btn-close-wrapup-toast')?.addEventListener('click', () => toast.remove());
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 9000);
+  } catch (err) {}
+}
+
+function injectAudioSentinel() {
+  try {
+    if (document.getElementById('dce-audio-sentinel-inject')) return;
+    const script = document.createElement('script');
+    script.id = 'dce-audio-sentinel-inject';
+    script.src = chrome.runtime.getURL('scripts/sentinel_inject.js');
+    (document.head || document.documentElement).appendChild(script);
+  } catch (err) {
+    console.warn("[DCE-Sentinel] Inject error:", err);
+  }
+}
+
+function recordAudioDiagnostic(eventType, details = {}) {
+  try {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      epoch: Date.now(),
+      type: eventType,
+      details: details,
+      agentName: (typeof scrapeAgentNameFromTopBar === 'function') ? scrapeAgentNameFromTopBar() : "Unknown",
+      pageUrl: window.location.href
+    };
+
+    recentAudioDiagnostics.unshift(entry);
+    if (recentAudioDiagnostics.length > AUDIO_DIAGNOSTICS_MAX) {
+      recentAudioDiagnostics.pop();
+    }
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ dce_audio_diagnostics: recentAudioDiagnostics });
+    }
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+
+function playSentinelAlertChime() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(440.00, ctx.currentTime + 0.14); // A4
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.38);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.38);
+  } catch (err) {
+    // Autoplay restrictions or headless env
+  }
+}
+
+function triggerAudioSentinelAlert(stateType, reasonDetail, faultCategory = "HARDWARE") {
+  if (micGuardState === stateType && micGuardLastReportedState === stateType) return;
+  micGuardState = stateType;
+  micGuardLastReportedState = stateType;
+  micGuardDetailMessage = reasonDetail;
+
+  playSentinelAlertChime();
+  renderMicGuardBanner(true, reasonDetail, stateType);
 
   const agentName = scrapeAgentNameFromTopBar();
   const agentId = agentName.toLowerCase().replace(/\s+/g, '.');
@@ -226,15 +380,20 @@ function triggerMicGuardBlocked(reasonDetail) {
   };
   const activeTicket = scrapeActiveTicketData() || {};
 
+  const alertType = stateType === 'ONE_WAY_AUDIO' ? 'ONE_WAY_AUDIO' : 'MIC_DISCONNECTED';
+  const alertTitle = stateType === 'ONE_WAY_AUDIO' 
+    ? "One-Way Audio Detected (Client Cannot Hear Agent)" 
+    : (stateType === 'DEVICE_DISCONNECTED' ? "Microphone Hardware Disconnected" : "Microphone Access Blocked");
+
   const micAlert = {
-    id: "alert_mic_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
-    type: "MIC_DISCONNECTED",
+    id: "alert_audio_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+    type: alertType,
     agentId: agentId,
     agentName: agentName,
     teamLeader: assignedMeta.tl,
     team: assignedMeta.team,
-    title: "Microphone Access Blocked / Disconnected",
-    message: reasonDetail || "Telephony interface lost - Microphone permission required",
+    title: alertTitle,
+    message: reasonDetail || "Telephony audio fault detected",
     ticketRef: activeTicket.ticketRef || "--",
     createdAt: Date.now(),
     read: false
@@ -254,14 +413,20 @@ function triggerMicGuardBlocked(reasonDetail) {
   dispatchAgentHeartbeat(false);
 }
 
+function triggerMicGuardBlocked(reasonDetail) {
+  triggerAudioSentinelAlert("BLOCKED", reasonDetail || "Chrome microphone permission revoked", "PERMISSION");
+}
+
 function triggerMicGuardHealthy() {
-  if (micGuardState !== "BLOCKED" && micGuardLastReportedState === "HEALTHY") {
-    micGuardState = "HEALTHY";
+  if (micGuardState === "HEALTHY" && micGuardLastReportedState === "HEALTHY") {
     return;
   }
   micGuardState = "HEALTHY";
   micGuardLastReportedState = "HEALTHY";
+  micGuardDetailMessage = "";
   renderMicGuardBanner(false);
+
+  recordAudioDiagnostic('MIC_HEALTH_RESTORED', { status: 'HEALTHY' });
 
   const agentName = scrapeAgentNameFromTopBar();
   const agentId = agentName.toLowerCase().replace(/\s+/g, '.');
@@ -277,8 +442,8 @@ function triggerMicGuardHealthy() {
     agentName: agentName,
     teamLeader: assignedMeta.tl,
     team: assignedMeta.team,
-    title: "Microphone Restored",
-    message: "Agent re-enabled microphone - Telephony restored",
+    title: "Microphone & Audio Restored",
+    message: "Agent audio track restored - Telephony healthy",
     createdAt: Date.now(),
     read: false
   };
@@ -297,10 +462,21 @@ function triggerMicGuardHealthy() {
   dispatchAgentHeartbeat(false);
 }
 
-function renderMicGuardBanner(show, reason = "") {
+function renderMicGuardBanner(show, reason = "", stateType = "BLOCKED") {
   const existingBanner = document.getElementById("dce-mic-guard-banner");
   if (existingBanner) existingBanner.remove();
   if (!show) return;
+
+  const isOneWay = stateType === 'ONE_WAY_AUDIO';
+  const isHardware = stateType === 'DEVICE_DISCONNECTED';
+
+  const bannerTitle = isOneWay
+    ? "CALL AUDIO ALERT: ONE-WAY AUDIO DETECTED (CLIENT CANNOT HEAR YOU!)"
+    : (isHardware ? "MIC GUARD: AUDIO HARDWARE DISCONNECTED" : "MIC GUARD: TELEPHONY MICROPHONE BLOCKED");
+
+  const headerColor = isOneWay ? "#fde047" : "#fecaca";
+  const borderGradient = isOneWay ? "#eab308" : "#ef4444";
+  const bgGradient = isOneWay ? "linear-gradient(135deg, #713f12, #451a03)" : "linear-gradient(135deg, #7f1d1d, #450a0a)";
 
   const banner = document.createElement("div");
   banner.id = "dce-mic-guard-banner";
@@ -309,37 +485,51 @@ function renderMicGuardBanner(show, reason = "") {
     top: 14px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #7f1d1d, #450a0a);
+    background: ${bgGradient};
     color: #ffffff;
-    border: 2px solid #ef4444;
+    border: 2px solid ${borderGradient};
     border-radius: 10px;
     box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7), 0 0 20px rgba(239, 68, 68, 0.4);
-    z-index: 999999999;
+    z-index: 2147483647;
     padding: 14px 22px;
     display: flex;
     align-items: center;
     gap: 18px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 90vw;
   `;
 
   banner.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 3px; max-width: 580px;">
+    <div style="display: flex; flex-direction: column; gap: 4px; max-width: 580px;">
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: #fecaca; text-transform: uppercase;">
-          MIC GUARD: TELEPHONY DISCONNECTED (MICROPHONE REQUIRED)
+        <span style="font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: ${headerColor}; text-transform: uppercase;">
+          ${bannerTitle}
         </span>
       </div>
-      <div style="font-size: 11px; line-height: 1.4; color: #f8fafc;">
-        \${reason ? \`<b>Detection:</b> \${reason}<br>\` : ''}
-        <b>How to Reconnect:</b>
-        1. Click the <b>Site Settings / Padlock</b> icon in the Chrome address bar.
-        2. Toggle <b>Microphone</b> to <b>Allowed / On</b>.
-        3. Click <b>Reload</b> to restore telephony connection.
+      <div id="mic-guard-banner-body" style="font-size: 11px; line-height: 1.4; color: #f8fafc;">
+        ${reason ? `<b>Issue:</b> ${reason}<br>` : ''}
+        <b>Recommended Actions:</b><br>
+        ${isOneWay ? `
+          1. Click <b>Quick Reset Audio</b> below to re-negotiate softphone voice stream.<br>
+          2. Reseat headset 3.5mm jack into the USB inline puck.<br>
+          3. If client still cannot hear, click <b>Reload Telephony Tab</b>.
+        ` : (isHardware ? `
+          1. <b>Firmly reseat the 3.5mm jack</b> into the round Jabra USB call-control puck.<br>
+          2. If loose, switch USB connector to a rear motherboard port.<br>
+          3. Click <b>Quick Reset Audio</b> below once plugged in.
+        ` : `
+          1. Click the <b>Site Settings / Padlock</b> icon in the Chrome address bar.<br>
+          2. Toggle <b>Microphone</b> to <b>Allowed / On</b>.<br>
+          3. Click <b>Reload Telephony Tab</b> to restore connection.
+        `)}
       </div>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 6px;">
-      <button id="btn-mic-guard-reload" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: 1px solid #34d399; font-weight: bold; border-radius: 6px; padding: 7px 14px; font-size: 11px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);">
-        Reload Page Now
+    <div style="display: flex; flex-direction: column; gap: 6px; min-width: 150px;">
+      <button id="btn-mic-guard-quick-reset" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border: 1px solid #38bdf8; font-weight: bold; border-radius: 6px; padding: 7px 12px; font-size: 11px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);">
+        Quick Reset Audio
+      </button>
+      <button id="btn-mic-guard-reload" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: 1px solid #34d399; font-weight: bold; border-radius: 6px; padding: 6px 12px; font-size: 10.5px; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">
+        Reload Telephony Tab
       </button>
       <button id="btn-mic-guard-dismiss" style="background: rgba(255,255,255,0.15); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; padding: 3px 8px; font-size: 9.5px; cursor: pointer;">
         Dismiss Warning
@@ -348,6 +538,45 @@ function renderMicGuardBanner(show, reason = "") {
   `;
 
   document.body.appendChild(banner);
+
+  const resetBtn = document.getElementById("btn-mic-guard-quick-reset");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      resetBtn.innerText = "Re-binding Audio...";
+      resetBtn.disabled = true;
+
+      // 1. Dispatch reprobe and softphone mute toggle commands to in-page sentinel
+      window.dispatchEvent(new CustomEvent('dce-audio-sentinel-command', { detail: { command: 'REPROBE_DEVICES' } }));
+      window.dispatchEvent(new CustomEvent('dce-audio-sentinel-command', { detail: { command: 'TOGGLE_DCE_MUTE' } }));
+
+      // 2. Request local getUserMedia to re-trigger permissions & enumeration
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            stream.getTracks().forEach(t => t.stop());
+            triggerMicGuardHealthy();
+          })
+          .catch(() => {});
+      }
+
+      // 3. Evaluate after 2.5 seconds
+      setTimeout(() => {
+        if (micGuardState === "HEALTHY") {
+          renderMicGuardBanner(false);
+        } else {
+          resetBtn.innerText = "Retry Reset";
+          resetBtn.disabled = false;
+          const bodyEl = document.getElementById("mic-guard-banner-body");
+          if (bodyEl) {
+            bodyEl.innerHTML = `
+              <b style="color: #fca5a5;">Soft reset completed, but microphone is still unattached.</b><br>
+              Hardware check needed: Check 3.5mm connection on Jabra puck or click <b>Reload Telephony Tab</b>.
+            `;
+          }
+        }
+      }, 2500);
+    });
+  }
 
   document.getElementById("btn-mic-guard-reload")?.addEventListener("click", () => {
     window.location.reload();
@@ -385,12 +614,93 @@ function evaluateMicGuard() {
 }
 
 function initMicGuardEngine() {
+  injectAudioSentinel();
+
+  // Listen for deep in-page WebRTC and Hardware Sentinel events
+  window.addEventListener('dce-audio-sentinel-event', (e) => {
+    const { type, payload } = e.detail || {};
+    if (!type) return;
+
+    recordAudioDiagnostic(type, payload);
+
+    if (type === 'CALL_DISCONNECTED') {
+      const summary = payload || {};
+      lastCompletedCallSummary = summary;
+      showCallWrapUpToast(summary);
+
+      // Save to chrome storage
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(["dce_call_history"], (res) => {
+          const list = res.dce_call_history || [];
+          list.unshift(summary);
+          chrome.storage.local.set({ 
+            dce_call_history: list.slice(0, 30),
+            dce_latest_call: summary
+          });
+        });
+      }
+
+      // If call terminated abnormally, notify supervisor alert feed
+      if (summary.category === 'ONE_WAY_AUDIO_DROP' || summary.category === 'HEADSET_DROP' || summary.category === 'NETWORK_TIMEOUT') {
+        const agentName = scrapeAgentNameFromTopBar();
+        const agentId = agentName.toLowerCase().replace(/\s+/g, '.');
+        const assignedMeta = (typeof customRosterMappingCache !== 'undefined' && customRosterMappingCache[agentName]) || DEFAULT_TL_MAPPING[agentName] || {
+          tl: "Unassigned TL",
+          team: "General Contact Centre"
+        };
+        const activeTicket = scrapeActiveTicketData() || {};
+
+        const callDropAlert = {
+          id: "alert_calldrop_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+          type: summary.category === 'ONE_WAY_AUDIO_DROP' ? "ONE_WAY_AUDIO" : "MIC_DISCONNECTED",
+          agentId: agentId,
+          agentName: agentName,
+          teamLeader: assignedMeta.tl,
+          team: assignedMeta.team,
+          title: `Call Terminated: ${summary.terminatedBy}`,
+          message: `${summary.rootCause} (Duration: ${summary.durationFormatted})`,
+          ticketRef: activeTicket.ticketRef || "--",
+          createdAt: Date.now(),
+          read: false
+        };
+
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({ action: "PUBLISH_AGENT_ALERT", alert: callDropAlert }).catch(() => {});
+        }
+      }
+    } else if (type === 'DEVICE_DISCONNECTED') {
+      const devNames = (payload.removedDevices || []).map(d => d.label).join(', ') || 'Headset';
+      triggerAudioSentinelAlert('DEVICE_DISCONNECTED', `Microphone hardware unplugged or disconnected: ${devNames}`);
+    } else if (type === 'GUM_ERROR') {
+      const errName = payload.errorName || 'NotFoundError';
+      if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
+        triggerAudioSentinelAlert('DEVICE_DISCONNECTED', `Microphone not found by browser (${errName}: Requested device not found)`);
+      } else if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
+        triggerAudioSentinelAlert('BLOCKED', `Microphone access denied in browser site permissions`);
+      } else {
+        triggerAudioSentinelAlert('BLOCKED', `Audio capture error: ${errName} - ${payload.errorMessage || ''}`);
+      }
+    } else if (type === 'RTP_FLATLINE') {
+      const stalls = payload.consecutiveStalls || 2;
+      triggerAudioSentinelAlert('ONE_WAY_AUDIO', `One-way audio detected: Outbound voice packets stalled for >${Math.round(stalls * 2.5)}s while on call. Client cannot hear you!`);
+    } else if (type === 'TRACK_MUTED') {
+      if (micGuardState === 'HEALTHY') {
+        triggerAudioSentinelAlert('MUTED', `Active audio track was muted by driver or OS: ${payload.trackLabel || ''}`);
+      }
+    } else if (type === 'RTP_RECOVERED' || type === 'DEVICE_CONNECTED' || type === 'GUM_SUCCESS' || type === 'TRACK_UNMUTED') {
+      if (micGuardState !== 'HEALTHY') {
+        triggerMicGuardHealthy();
+      }
+    }
+  });
+
+  // Standard permission query fallback
   if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
     navigator.permissions.query({ name: 'microphone' }).then(permissionStatus => {
       const handleState = () => {
         if (permissionStatus.state === 'denied') {
           triggerMicGuardBlocked("Chrome site settings have blocked Microphone access");
-        } else if (permissionStatus.state === 'granted') {
+        } else if (permissionStatus.state === 'granted' && micGuardState === 'BLOCKED') {
           triggerMicGuardHealthy();
         }
       };
@@ -905,7 +1215,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       hostname: window.location.hostname || window.location.host,
       url: window.location.href,
       title: document.title || "Web Application",
-      micGuardStatus: micGuardState
+      micGuardStatus: micGuardState,
+      micGuardDetail: micGuardDetailMessage,
+      audioDiagnostics: recentAudioDiagnostics,
+      latestCall: lastCompletedCallSummary
+    });
+    return true;
+  }
+
+  if (message.action === "GET_AUDIO_DIAGNOSTICS") {
+    sendResponse({
+      status: "OK",
+      micGuardState: micGuardState,
+      micGuardDetail: micGuardDetailMessage,
+      diagnostics: recentAudioDiagnostics
     });
     return true;
   }
@@ -1044,7 +1367,7 @@ async function replayRecordedSteps(steps) {
                             step.requiresInput === true || 
                             step.prompt === true || 
                             step.requiresManualInput === true || 
-                            (step.action === "input" && (!step.inputValue || step.inputValue.trim() === "" || /\[FILL_IN\]|\[INPUT_NEEDED\]|\[PROMPT\]|\[MANUAL\]/i.test(step.inputValue)));
+                            (step.action === "input" && (!step.inputValue || step.inputValue.trim() === "" || /\[DATE\]|\[NUMBER\]|\[FILL_IN\]|\[INPUT_NEEDED\]|\[PROMPT\]|\[MANUAL\]|\[Insert Date\]/i.test(step.inputValue)));
 
     if (isWaitInputStep) {
       let element = locateTargetElement(step.target);
@@ -1059,17 +1382,26 @@ async function replayRecordedSteps(steps) {
       }
       if (!fieldName) fieldName = step.target || "Required Field";
 
+      let promptMsg = `Please fill in [${fieldName}]`;
+      if (/\[DATE\]|\[Insert Date\]/i.test(step.inputValue || "") || /date/i.test(fieldName)) {
+        promptMsg = `Please select or enter the required Date in [${fieldName}]`;
+      } else if (/\[NUMBER\]/i.test(step.inputValue || "") || /number|claim|ref/i.test(fieldName)) {
+        promptMsg = `Please enter the required Number in [${fieldName}]`;
+      }
+
       if (element) {
         element.scrollIntoView({ block: 'center' });
+        element.focus();
         element.style.outline = "3px solid #7c3aed";
         element.style.boxShadow = "0 0 20px rgba(124, 58, 237, 0.9)";
       }
-      showPauseBanner(true, `Step ${i + 1} of ${steps.length}: ${fieldName}`);
+      showPauseBanner(true, `Step ${i + 1} of ${steps.length}: ${promptMsg}`);
       chrome.runtime.sendMessage({ 
         action: "MACRO_PAUSED", 
         stepIndex: i + 1, 
         totalSteps: steps.length, 
         fieldName: fieldName, 
+        promptMsg: promptMsg,
         target: step.target 
       });
 
@@ -1100,15 +1432,10 @@ async function replayRecordedSteps(steps) {
       element.focus();
       
       let rawVal = step.inputValue || "";
-      // Resolve dynamic date and number tokens
+      // Use live user-entered values directly without auto-generating random numbers or fake IDs
       let resolvedVal = rawVal
         .replace(/\[DATE\]|\[Insert Date\]/gi, element.type === 'date' ? todayIso : todayStd)
-        .replace(/\[TODAY\]/gi, element.type === 'date' ? todayIso : todayStd)
-        .replace(/\[DUE_DATE\]/gi, element.type === 'date' ? nextWeekIso : formatDateToStandard(new Date(Date.now() + 7 * 86400000)))
-        .replace(/\[NUMBER\]/gi, () => Math.floor(100000 + Math.random() * 900000).toString())
-        .replace(/\[ID_NUMBER\]/gi, "8501015029087")
-        .replace(/\[REF_NUMBER\]/gi, "C-2026-" + Math.floor(10000 + Math.random() * 90000))
-        .replace(/\[AMOUNT\]/gi, "R 1,250.00");
+        .replace(/\[TODAY\]/gi, element.type === 'date' ? todayIso : todayStd);
 
       element.value = resolvedVal;
       try {
@@ -1268,3 +1595,72 @@ function insertStagedNoteIntoDceNotesLog(notesText) {
 
 // Start Proactive Mic Guard Monitoring
 initMicGuardEngine();
+
+// ============================================================
+// CRM TAB PERMISSION ENFORCEMENT (Admin-controlled)
+// ============================================================
+(function initTabPermissionGuard() {
+  const TOAST_ID = 'dce-tab-blocked-toast';
+
+  function showTabBlockedToast(tabName) {
+    let toast = document.getElementById(TOAST_ID);
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = TOAST_ID;
+      toast.style.cssText = [
+        'position: fixed',
+        'top: 70px',
+        'left: 50%',
+        'transform: translateX(-50%)',
+        'background: #7f1d1d',
+        'color: #fef2f2',
+        'border: 1px solid #ef4444',
+        'border-radius: 6px',
+        'padding: 8px 18px',
+        'font-size: 12px',
+        'font-weight: bold',
+        'z-index: 2147483647',
+        'box-shadow: 0 4px 12px rgba(0,0,0,0.5)',
+        'pointer-events: none',
+        'opacity: 0',
+        'transition: opacity 0.2s ease'
+      ].join(';');
+      document.body.appendChild(toast);
+    }
+    toast.innerText = `🔒 "${tabName}" is restricted by your administrator`;
+    toast.style.opacity = '1';
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+  }
+
+  function attachTabGuard() {
+    const navList = document.getElementById('nav-item-list');
+    if (!navList || navList.dataset.dceGuarded) return;
+    navList.dataset.dceGuarded = '1';
+
+    navList.addEventListener('click', (e) => {
+      const link = e.target.closest('a.nav-item-value');
+      if (!link) return;
+      const tabName = link.textContent.trim();
+
+      chrome.storage.local.get(['dce_tab_permissions'], (res) => {
+        const perms = res.dce_tab_permissions || {};
+        // If explicitly set to false, block it
+        if (perms[tabName] === false) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          showTabBlockedToast(tabName);
+        }
+      });
+    }, true); // capture phase so we intercept before Angular routing
+  }
+
+  // Attach immediately if nav is already rendered
+  attachTabGuard();
+
+  // Also watch for Angular dynamically rendering the nav (route changes)
+  const observer = new MutationObserver(() => {
+    attachTabGuard();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+})();

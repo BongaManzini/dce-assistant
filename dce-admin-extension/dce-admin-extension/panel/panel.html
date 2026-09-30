@@ -574,59 +574,64 @@
 
  <div id="incomplete-alert" class="incomplete-alert" role="alert"></div>
 
- <!-- HQ Admin & Team Leader Floor Enforcement & Feature Control Matrix -->
- <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
-  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-   <span style="font-weight: bold; font-size: 11px; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
-     HQ Admin & Team Leader Feature Switchboard
-   </span>
-   <span style="background: var(--badge-bg); color: var(--badge-text); font-size: 8.5px; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid var(--badge-border);">
-    REAL-TIME AGENT SYNC
-   </span>
-  </div>
-  
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 9.5px;">
-   <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Enforce read-only mode so agents use 1-Tap presets and token insert buttons">
-    <input type="checkbox" id="chk-admin-notes-lock">
-    <span><b> Lock Agent Notes Editing</b> (Read-Only)</span>
-   </label>
-   
-   <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Highlight required uncompleted CRM form fields and show save reminders">
-    <input type="checkbox" id="chk-admin-save-guidance" checked>
-    <span><b> "Straight to Save" Reminders</b></span>
-   </label>
-   
-   <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Play audio chime and display glowing alert toast when step sequence pauses for manual entry">
-    <input type="checkbox" id="chk-admin-pause-alerts" checked>
-    <span><b> Step Pause Alerts & Chimes</b></span>
-   </label>
-
-   <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Allow agents to search and stack multiple caller queries into a single ticket note">
-    <input type="checkbox" id="chk-admin-multi-query" checked>
-    <span><b> Multi-Query Stacking Bar</b></span>
-   </label>
-
-   <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Automatically execute CRM form field inputs and dropdown selections on preset click">
-    <input type="checkbox" id="chk-admin-auto-step" checked>
-    <span><b> 1-Tap Auto-Step Execution</b></span>
-   </label>
-
-   <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Display Date picker and Number Dropdown / Custom Input toolbar on agent stations">
-    <input type="checkbox" id="chk-admin-token-toolbar" checked>
-    <span><b> Smart Token Insert Toolbar</b></span>
-   </label>
-
-   <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Allow agents to execute macro steps with loop iterations (repeat N times)">
-    <input type="checkbox" id="chk-admin-loop-engine" checked>
-    <span><b> Step Iteration & Loop Engine</b></span>
-   </label>
-  </div>
+ <!-- Navigation Tabs: Studio / Dashboard / Insights / Diff & Merger -->
+ <div class="nav-tabs">
+  <button id="tab-btn-studio" class="nav-tab-btn active">🛠️ Studio</button>
+  <button id="tab-btn-dashboard" class="nav-tab-btn">👥 Roster</button>
+  <button id="tab-btn-insights" class="nav-tab-btn">📈 Insights</button>
+  <button id="tab-btn-compare" class="nav-tab-btn">⚖️ JSON Diff</button>
  </div>
-
-
 
  <!-- ================= PART 1: STUDIO & STEP BUILDER ================= -->
  <div id="tab-content-studio" class="tab-content active">
+  <!-- HQ Admin & Team Leader Floor Enforcement & Feature Control Matrix -->
+  <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+    <span style="font-weight: bold; font-size: 11px; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+      HQ Admin & Team Leader Feature Switchboard
+    </span>
+    <span style="background: var(--badge-bg); color: var(--badge-text); font-size: 8.5px; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid var(--badge-border);">
+     REAL-TIME AGENT SYNC
+    </span>
+   </div>
+   
+   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 9.5px;">
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Enforce read-only mode so agents use 1-Tap presets and token insert buttons">
+     <input type="checkbox" id="chk-admin-notes-lock">
+     <span><b> Lock Agent Notes Editing</b> (Read-Only)</span>
+    </label>
+    
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Highlight required uncompleted CRM form fields and show save reminders">
+     <input type="checkbox" id="chk-admin-save-guidance" checked>
+     <span><b> "Straight to Save" Reminders</b></span>
+    </label>
+    
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Play audio chime and display glowing alert toast when step sequence pauses for manual entry">
+     <input type="checkbox" id="chk-admin-pause-alerts" checked>
+     <span><b> Step Pause Alerts & Chimes</b></span>
+    </label>
+
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Allow agents to search and stack multiple caller queries into a single ticket note">
+     <input type="checkbox" id="chk-admin-multi-query" checked>
+     <span><b> Multi-Query Stacking Bar</b></span>
+    </label>
+
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Automatically execute CRM form field inputs and dropdown selections on preset click">
+     <input type="checkbox" id="chk-admin-auto-step" checked>
+     <span><b> 1-Tap Auto-Step Execution</b></span>
+    </label>
+
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Display Date picker and Number Dropdown / Custom Input toolbar on agent stations">
+     <input type="checkbox" id="chk-admin-token-toolbar" checked>
+     <span><b> Smart Token Insert Toolbar</b></span>
+    </label>
+
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--border-soft);" title="Allow agents to execute macro steps with loop iterations (repeat N times)">
+     <input type="checkbox" id="chk-admin-loop-engine" checked>
+     <span><b> Step Iteration & Loop Engine</b></span>
+    </label>
+   </div>
+  </div>
   <!-- Ticket History & Notes Log Lookup -->
   <div class="section-box">
    <div class="section-title">
@@ -637,6 +642,26 @@
     <button id="btn-scan-latest-open" class="btn-action btn-scan"> Open Latest (Open)</button>
     <button id="btn-scan-latest-closed" class="btn-action btn-scan" style="background: #1e3a5f;"> Open Latest (Closed)</button>
    </div>
+
+   <!-- CRM Tab Access Permissions -->
+   <div style="margin-top: 10px; border-top: 1px solid var(--border-soft); padding-top: 8px;">
+    <div style="font-size: 9.5px; font-weight: bold; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+      CRM Case Tab Permissions
+      <span style="font-size: 8px; color: var(--muted); font-weight: normal;">(uncheck = agents blocked from that tab)</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 9.5px;">
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-case-details" checked><span>Case Details</span></label>
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-case-documents" checked><span>Case Documents</span></label>
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-notes-log" checked><span>Notes Log</span></label>
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-workflow-log" checked><span>Workflow Log</span></label>
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-notifications-log" checked><span>Notifications Log</span></label>
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-audit-trail" checked><span>Audit Trail</span></label>
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-status-change-log" checked><span>Status Change Log</span></label>
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-message-event-log" checked><span>Message Event Log</span></label>
+     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--code-bg); padding: 4px 7px; border-radius: 4px; border: 1px solid var(--border-soft);"><input type="checkbox" id="chk-tab-related-cases" checked><span>Related Cases</span></label>
+    </div>
+   </div>
+
   </div>
 
   <!-- Category Trigger Matrix -->
@@ -760,30 +785,15 @@
    <div class="section-title">
     <span>Call Notes Staging Area</span>
     <span id="copy-feedback" style="color: #4ade80; font-size: 10px; display: none;">Copied!</span>
-   </div>
-   <!-- Smart Token & Number Dropdown Toolbar -->
-   <div class="smart-token-toolbar" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; background: var(--code-bg); padding: 6px; border-radius: 6px; border: 1px solid var(--border-soft);">
-    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: var(--muted); font-weight: bold;">
-     <span>Number, Token & Date Insert:</span>
-    </div>
-    <div style="display: flex; gap: 4px; align-items: center;">
-     <select id="select-number-dropdown" class="dropdown" style="flex: 1; font-size: 9.5px; padding: 3px 5px;">
-      <option value="" disabled selected>-- Select Number / Token / Date --</option>
-      <option value="[NUMBER]">[NUMBER] Dynamic Number</option>
-      <option value="[ID_NUMBER]">[ID_NUMBER] SA ID Number</option>
-      <option value="[REF_NUMBER]">[REF_NUMBER] Claim Reference</option>
-      <option value="[AMOUNT]">[AMOUNT] Benefit Amount</option>
-      <option value="[W.CL_FORM]">[W.CL_FORM] CF Form</option>
-      <option value="TODAY">Today's Date</option>
-      <option value="+7DAYS">+7 Days Date</option>
-      <option value="1000">1000</option>
-      <option value="5000">5000</option>
-      <option value="10000">10000</option>
-      <option value="CUSTOM">Custom Input Field...</option>
-     </select>
-     <input type="text" id="input-custom-number" placeholder="Enter custom value..." style="flex: 1; display: none; background: var(--bg-card); color: var(--text); border: 1px solid var(--border-soft); border-radius: 4px; padding: 3px 6px; font-size: 9.5px;">
-     <button id="btn-insert-number-val" class="btn-action" style="flex: 0 0 55px; background: #0284c7; font-size: 9.5px; padding: 3px 6px;" title="Insert selected number or token into call notes">Insert</button>
-    </div>
+   <!-- Quick Token Insert Toolbar for Notes Templates -->
+   <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; background: var(--code-bg); padding: 5px 8px; border-radius: 5px; border: 1px solid var(--border-soft);">
+    <span style="font-size: 9px; color: var(--muted); font-weight: bold;">Insert Fill-In Token:</span>
+    <button type="button" id="btn-admin-insert-date" class="btn-action" style="background: #0d9488; color: #ccfbf1; border: 1px solid #14b8a6; padding: 3px 8px; font-size: 9.5px; border-radius: 4px; cursor: pointer;" title="Insert [DATE] placeholder (signals agent to pick a date)">
+      + [DATE]
+    </button>
+    <button type="button" id="btn-admin-insert-number" class="btn-action" style="background: #0284c7; color: #e0f2fe; border: 1px solid #38bdf8; padding: 3px 8px; font-size: 9.5px; border-radius: 4px; cursor: pointer;" title="Insert [NUMBER] placeholder (signals agent to enter a number)">
+      + [NUMBER]
+    </button>
    </div>
    <textarea id="txt-call-notes" class="notes-textarea" placeholder="Auto-generated structured notes appear here..."></textarea>
    <div class="buttons-row">
@@ -812,12 +822,9 @@
     <button id="btn-clear-profile-steps" class="btn-action btn-clear" style="flex: 0 0 45px;" title="Clear steps for this profile">Clear</button>
    </div>
    <div class="steps-container" id="steps-log"></div>
-  </div>
 
-  <!-- Sticky Bottom Recording Control Bar (Docked at Bottom, Never Covers Content) -->
-  <div style="position: sticky; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid var(--border-soft); padding: 8px 10px; z-index: 1000; box-shadow: 0 -4px 15px rgba(0,0,0,0.6); margin-top: 8px; border-radius: 6px 6px 0 0;">
    <!-- Macro Repeat Loop Controller for Admins -->
-   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 9.5px; color: var(--muted); background: var(--code-bg); padding: 4px 6px; border-radius: 4px; border: 1px solid var(--border-soft);">
+   <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; margin-bottom: 6px; font-size: 9.5px; color: var(--muted); background: var(--code-bg); padding: 4px 6px; border-radius: 4px; border: 1px solid var(--border-soft);">
     <span> Admin Execution Loop (Repeat):</span>
     <label style="display: flex; align-items: center; gap: 4px;">
      <span>Repeat:</span>
@@ -826,28 +833,452 @@
     </label>
    </div>
 
-   <div class="buttons-row" style="gap: 4px; flex-wrap: wrap; margin-bottom: 6px;">
+   <!-- Recording & Replay Action Buttons -->
+   <div class="buttons-row" style="gap: 4px; flex-wrap: wrap; margin-top: 6px;">
     <button id="btn-append-steps" class="btn-action" style="background: #0284c7; border-color: #38bdf8; color: white; flex: 1.2; font-weight: bold;" title="Add new recorded steps to existing steps list without clearing"> Append Steps</button>
     <button id="btn-record" class="btn-action btn-rec" style="flex: 1;" title="Record steps from scratch (overwrites existing steps)"> Overwrite</button>
     <button id="btn-add-step-manual" class="btn-action btn-secondary" style="flex: 1; background: #334155; color: var(--text-heading);" title="Manually add a single step"> Add Step</button>
     <button id="btn-play" class="btn-action btn-play" style="flex: 0 0 55px;">Replay</button>
     <button id="btn-stop" class="btn-action btn-stop" style="flex: 0 0 45px;"> Stop</button>
    </div>
+  </div>
 
-   <!-- Package Import / Export -->
-   <div class="buttons-row" style="gap: 4px;">
-    <button id="btn-export-profiles" class="btn-action btn-secondary" style="background: #0284c7; border-color: #38bdf8; color: white; flex: 1; font-size: 9.5px; padding: 4px 6px;">
+  <!-- Master Presets Package Import / Export (Dedicated Card, Never Blocked) -->
+  <div class="section-box" style="border-left-color: var(--highlight); margin-top: 8px;">
+   <div class="section-title">
+    <span>Master Presets Package</span>
+    <span style="font-size: 8.5px; color: var(--muted);">Backup &amp; Distribution</span>
+   </div>
+   <div class="buttons-row" style="gap: 6px;">
+    <button id="btn-export-profiles" class="btn-action" style="background: #0284c7; flex: 1; font-size: 10px; padding: 6px 8px; font-weight: bold;" title="Export all custom presets as JSON">
       Export Master JSON
     </button>
-    <label class="btn-action btn-secondary" style="flex: 1; text-align: center; display: inline-block; cursor: pointer; padding: 4px 6px; font-size: 9.5px;">
+    <label class="btn-action" style="background: #0d9488; flex: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 6px 8px; font-size: 10px; font-weight: bold; border-radius: 4px;" title="Import presets JSON file">
       Import Master JSON
-     <input type="file" id="input-import-profiles" accept=".json" style="display: none;">
+     <input type="file" id="input-import-profiles" accept=".json" style="position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none;">
     </label>
    </div>
   </div>
  </div>
 
+ <!-- ================= PART 2: LIVE FLOOR ROSTER DASHBOARD ================= -->
+ <div id="tab-content-dashboard" class="tab-content">
+  <div class="section-box">
+   <div class="section-title">
+    <span>Live Floor Roster</span>
+    <div style="display: flex; gap: 4px;">
+     <button id="btn-show-import-roster" class="btn-action" style="background: #0284c7; font-size: 8.5px; padding: 2px 6px;"> Import Sheet</button>
+     <button id="btn-clear-roster" class="btn-action btn-clear" style="font-size: 8.5px; padding: 2px 6px;">Clear Roster</button>
+    </div>
+   </div>
+   <div class="filter-grid">
+    <select id="filter-tl-select" class="dropdown" style="font-size: 9.5px; padding: 4px;">
+     <option value="ALL">All Team Leaders</option>
+    </select>
+    <select id="filter-team-select" class="dropdown" style="font-size: 9.5px; padding: 4px;">
+     <option value="ALL">All Teams</option>
+    </select>
+   </div>
+   <div class="agent-roster-list" id="agent-roster-container">
+    <div style="color: var(--muted); padding: 14px; text-align: center;">Loading agent heartbeats...</div>
+   </div>
+  </div>
 
+  <!-- Agent Audit Drill-Down Card -->
+  <div id="agent-detail-card" class="section-box" style="display: none; border-left-color: var(--accent);">
+   <div class="section-title">
+    <span id="detail-agent-header">Agent Audit</span>
+    <span id="detail-agent-status-badge"></span>
+   </div>
+   <div id="detail-agent-meta" style="font-size: 9.5px; color: var(--muted); margin-bottom: 6px;">--</div>
+   <div style="background: var(--code-bg); padding: 6px; border-radius: 4px; border: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 3px;">
+    <div class="audit-row"><span style="color: var(--muted);">Ticket Ref:</span><b id="detail-case-ref">--</b></div>
+    <div class="audit-row"><span style="color: var(--muted);">Case Title:</span><span id="detail-case-title">--</span></div>
+    <div class="audit-row"><span style="color: var(--muted);">Selected Query:</span><span id="detail-selected-query">--</span></div>
+    <div class="audit-row"><span style="color: var(--muted);">Labour Centre:</span><span id="detail-case-location">--</span></div>
+    <div class="audit-row"><span style="color: var(--muted);">Notes Compliance:</span><span id="detail-notes-format">--</span></div>
+    <div class="audit-row"><span style="color: var(--muted);">Telemetry / Tokens:</span><span id="detail-notes-tokens">--</span></div>
+   </div>
+  </div>
+ </div>
+
+ <!-- ================= PART 3: FLOOR INSIGHTS & QUALITY ANALYTICS ================= -->
+ <div id="tab-content-insights" class="tab-content">
+  <!-- Key Metrics Grid -->
+  <div class="insights-grid">
+   <div class="metric-card">
+    <div class="metric-val" id="metric-total-calls">0</div>
+    <div class="metric-label">Online Agents</div>
+   </div>
+   <div class="metric-card">
+    <div class="metric-val" id="metric-qa-score" style="color: #34d399;">100%</div>
+    <div class="metric-label">QA Compliance</div>
+   </div>
+   <div class="metric-card">
+    <div class="metric-val" id="metric-flagged-count" style="color: #ef4444;">0</div>
+    <div class="metric-label">Flagged Issues</div>
+   </div>
+  </div>
+
+  <!-- Telemetry Scorecard -->
+  <div class="section-box">
+   <div class="section-title">
+    <span>Ground-Truth Telemetry</span>
+    <span style="font-size: 9px; color: var(--muted);">Live CRM Benchmarks</span>
+   </div>
+   <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; margin-bottom: 6px;">
+    <div style="background: var(--code-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-soft);">
+     <div id="metric-ground-aht" style="font-weight: bold; color: var(--accent); font-size: 13px;">--</div>
+     <div style="font-size: 8px; color: var(--muted);">Avg AHT</div>
+    </div>
+    <div style="background: var(--code-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-soft);">
+     <div id="metric-wrap-time" style="font-weight: bold; color: var(--highlight); font-size: 13px;">--</div>
+     <div style="font-size: 8px; color: var(--muted);">Wrap Time</div>
+    </div>
+    <div style="background: var(--code-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-soft);">
+     <div id="metric-nav-latency" style="font-weight: bold; color: #f59e0b; font-size: 13px;">--</div>
+     <div style="font-size: 8px; color: var(--muted);">CRM Latency</div>
+    </div>
+    <div style="background: var(--code-bg); padding: 5px; border-radius: 4px; border: 1px solid var(--border-soft);">
+     <div id="metric-friction-count" style="font-weight: bold; color: #f87171; font-size: 13px;">0</div>
+     <div style="font-size: 8px; color: var(--muted);">Frictions</div>
+    </div>
+   </div>
+  </div>
+
+  <!-- CRM Field Friction Analytics -->
+  <div class="section-box">
+   <div class="section-title">
+    <span>Field Friction &amp; Dwell Bottlenecks</span>
+    <span style="font-size: 8.5px; color: var(--muted);">&gt;=12s Dwell</span>
+   </div>
+   <div id="analytics-friction-bars"></div>
+  </div>
+
+  <!-- Category & Aux Breakdown -->
+  <div class="section-box">
+   <div class="section-title">
+    <span>Live Query Distribution</span>
+    <span style="font-size: 8.5px; color: var(--muted);">By Call Volume</span>
+   </div>
+   <div id="analytics-query-bars"></div>
+  </div>
+
+  <div class="section-box">
+   <div class="section-title">
+    <span>Aux &amp; Paused State Distribution</span>
+   </div>
+   <div id="analytics-aux-bars"></div>
+  </div>
+
+  <!-- Floor Audit Stream & CSV Export -->
+  <div class="section-box">
+   <div class="section-title">
+    <span>Flagged Ticket Audit Stream</span>
+    <button id="btn-export-qa-csv" class="btn-action" style="background: #059669; font-size: 8.5px; padding: 2px 6px;"> Export QA CSV</button>
+   </div>
+   <div id="insights-audit-log" style="max-height: 140px; overflow-y: auto; font-size: 9px; display: flex; flex-direction: column; gap: 3px;">
+    <div style="color: var(--muted); text-align: center; padding: 8px;">No flagged tickets recorded yet today.</div>
+   </div>
+  </div>
+ </div>
+
+ <!-- ========================================================================= -->
+ <!-- TAB 4: JSON DIFF, COMPARISON & STEP MERGER STUDIO                         -->
+ <!-- ========================================================================= -->
+ <div id="tab-content-compare" class="tab-content">
+  <div class="section-box" style="border-left-color: var(--highlight);">
+   <div class="section-title">
+    <span style="display: flex; align-items: center; gap: 6px;">
+     ⚖️ Master JSON Diff & Step Merger
+    </span>
+    <span style="font-size: 8.5px; background: rgba(0, 163, 224, 0.2); color: var(--highlight); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--highlight);">
+     COMPARE & TRANSFER
+    </span>
+   </div>
+   <div style="font-size: 9.5px; color: var(--muted); margin-bottom: 8px; line-height: 1.3;">
+    Compare two JSON packages side-by-side, inspect step differences, transfer or move steps between presets, copy/paste steps, or create a new preset.
+   </div>
+
+   <!-- Package Loaders: Package A (Left) vs Package B (Right) -->
+   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+    <!-- Package A Controls -->
+    <div style="background: var(--code-bg); padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border-soft);">
+     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+      <b style="color: var(--accent); font-size: 10px;">📦 Package A (Source)</b>
+      <span id="badge-count-pkg-a" style="font-size: 8.5px; background: rgba(0, 214, 143, 0.15); color: var(--accent); padding: 1px 5px; border-radius: 3px;">0 Presets</span>
+     </div>
+     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+      <button id="btn-load-a-active" class="btn-action" style="flex: 1; min-width: 80px; font-size: 8.5px; background: #064e3b; color: #6ee7b7; border: 1px solid #059669;" title="Load from currently active Admin profiles">
+       Active Presets
+      </button>
+      <div style="position: relative; flex: 1.2; min-width: 80px; overflow: hidden; border-radius: 4px; display: inline-flex;">
+       <button type="button" class="btn-action" style="width: 100%; font-size: 8.5px; background: #0284c7; color: white; text-align: center; font-weight: bold; padding: 5px 4px; border: 1px solid #38bdf8; pointer-events: none;" title="Upload JSON file for Package A">
+        📁 Upload JSON
+       </button>
+       <input type="file" id="input-file-pkg-a" accept=".json" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
+      </div>
+      <button id="btn-paste-json-a" class="btn-action" style="flex: 1; min-width: 55px; font-size: 8.5px; background: #334155; color: #cbd5e1;" title="Paste raw JSON into Package A">
+       Paste
+      </button>
+     </div>
+    </div>
+
+    <!-- Package B Controls -->
+    <div style="background: var(--code-bg); padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border-soft);">
+     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+      <b style="color: var(--highlight); font-size: 10px;">📦 Package B (Target)</b>
+      <span id="badge-count-pkg-b" style="font-size: 8.5px; background: rgba(0, 163, 224, 0.15); color: var(--highlight); padding: 1px 5px; border-radius: 3px;">0 Presets</span>
+     </div>
+     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+      <button id="btn-load-b-default" class="btn-action" style="flex: 1; min-width: 80px; font-size: 8.5px; background: #1e3a5f; color: #7dd3fc; border: 1px solid #0284c7;" title="Load factory default Master Presets bundle">
+       Default Suite
+      </button>
+      <div style="position: relative; flex: 1.2; min-width: 80px; overflow: hidden; border-radius: 4px; display: inline-flex;">
+       <button type="button" class="btn-action" style="width: 100%; font-size: 8.5px; background: #0284c7; color: white; text-align: center; font-weight: bold; padding: 5px 4px; border: 1px solid #38bdf8; pointer-events: none;" title="Upload JSON file for Package B">
+        📁 Upload JSON
+       </button>
+       <input type="file" id="input-file-pkg-b" accept=".json" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
+      </div>
+      <button id="btn-paste-json-b" class="btn-action" style="flex: 1; min-width: 55px; font-size: 8.5px; background: #334155; color: #cbd5e1;" title="Paste raw JSON into Package B">
+       Paste
+      </button>
+     </div>
+    </div>
+   </div>
+
+   <!-- Quick Tools: Swap Packages, Clear B & View Mode -->
+   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+    <div style="display: flex; gap: 4px;">
+     <button type="button" id="btn-swap-packages" class="btn-action" style="font-size: 8.5px; background: #334155; color: #f1f5f9; padding: 2px 7px;" title="Swap Package A and Package B">
+      🔁 Swap (A ⇄ B)
+     </button>
+     <button type="button" id="btn-clear-pkg-b" class="btn-action" style="font-size: 8.5px; background: transparent; border: 1px solid #475569; color: #94a3b8; padding: 2px 7px;" title="Clear Package B">
+      🗑️ Clear B
+     </button>
+    </div>
+    <div style="display: flex; gap: 4px; align-items: center;">
+     <button type="button" id="btn-toggle-layout-view" class="btn-action" style="font-size: 8.5px; background: rgba(124, 58, 237, 0.2); border: 1px solid #7c3aed; color: #c4b5fd; padding: 2px 7px;" title="Toggle between Side-by-Side and Stacked full-width layout">
+      ↕️ Stacked View
+     </button>
+    </div>
+   </div>
+
+   <!-- Diff Status Banner -->
+   <div id="diff-status-banner" style="display: none; background: rgba(0, 214, 143, 0.1); border: 1px solid rgba(0, 214, 143, 0.3); border-radius: 4px; padding: 5px 8px; font-size: 8.5px; color: var(--accent); margin-bottom: 6px; line-height: 1.3;"></div>
+
+   <!-- Diff Summary Metric Badges -->
+   <div id="diff-metrics-bar" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; font-size: 9px; text-align: center;">
+    <div style="background: var(--code-bg); padding: 4px; border-radius: 4px; border: 1px solid var(--border-soft);">
+     <div id="metric-identical-count" style="font-weight: bold; color: var(--accent); font-size: 11px;">0</div>
+     <div style="color: var(--muted); font-size: 8px;">Identical</div>
+    </div>
+    <div style="background: var(--code-bg); padding: 4px; border-radius: 4px; border: 1px solid var(--border-soft);">
+     <div id="metric-diff-count" style="font-weight: bold; color: #f59e0b; font-size: 11px;">0</div>
+     <div style="color: var(--muted); font-size: 8px;">Diff / Modified</div>
+    </div>
+    <div style="background: var(--code-bg); padding: 4px; border-radius: 4px; border: 1px solid var(--border-soft);">
+     <div id="metric-only-a-count" style="font-weight: bold; color: #38bdf8; font-size: 11px;">0</div>
+     <div style="color: var(--muted); font-size: 8px;">Only in A</div>
+    </div>
+    <div style="background: var(--code-bg); padding: 4px; border-radius: 4px; border: 1px solid var(--border-soft);">
+     <div id="metric-only-b-count" style="font-weight: bold; color: #c084fc; font-size: 11px;">0</div>
+     <div style="color: var(--muted); font-size: 8px;">Only in B</div>
+    </div>
+   </div>
+
+   <!-- Preset Selection & Filter Bar -->
+   <div style="display: flex; gap: 4px; margin-bottom: 6px; align-items: center;">
+    <div style="flex: 1;">
+     <label style="font-size: 8.5px; color: var(--muted); display: block; margin-bottom: 1px;">Select Preset to Compare:</label>
+     <select id="select-compare-preset" class="dropdown" style="width: 100%; font-size: 9.5px; padding: 3px 4px; font-weight: bold;">
+      <option value="">-- Load Packages First --</option>
+     </select>
+    </div>
+    <div style="flex: 0 0 105px;">
+     <label style="font-size: 8.5px; color: var(--muted); display: block; margin-bottom: 1px;">Filter View:</label>
+     <select id="select-compare-filter" class="dropdown" style="width: 100%; font-size: 9px; padding: 3px 2px;">
+      <option value="ALL">Show All</option>
+      <option value="DIFF">Diff / Modified</option>
+      <option value="ONLY_A">Only in A</option>
+      <option value="ONLY_B">Only in B</option>
+      <option value="SAME">Identical</option>
+     </select>
+    </div>
+   </div>
+
+   <!-- Global Transfer / Assembly Actions -->
+   <div style="display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap;">
+    <button id="btn-create-new-from-steps" class="btn-action" style="flex: 1.5; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; font-weight: bold; font-size: 9.5px; padding: 4px 6px; border: 1px solid #a78bfa;" title="Create a brand new preset using checked steps from either side">
+     ✨ Create New Preset from Selected Steps
+    </button>
+    <button id="btn-copy-all-a-to-b" class="btn-action" style="flex: 1; background: #0284c7; color: white; font-size: 9px; padding: 4px;" title="Copy all steps from Preset A into Preset B">
+     ➡️ Copy All (A ➔ B)
+    </button>
+    <button id="btn-copy-all-b-to-a" class="btn-action" style="flex: 1; background: #059669; color: white; font-size: 9px; padding: 4px;" title="Copy all steps from Preset B into Preset A">
+     ⬅️ Copy All (B ➔ A)
+    </button>
+   </div>
+
+   <!-- Side-by-Side Detailed Workspace -->
+   <div id="compare-workspace" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+    
+    <!-- LEFT: PRESET IN PACKAGE A -->
+    <div id="card-compare-a" style="background: var(--code-bg); border: 1px solid var(--border-soft); border-radius: 6px; padding: 8px; display: flex; flex-direction: column;">
+     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-soft); padding-bottom: 4px; margin-bottom: 6px;">
+      <div style="font-weight: bold; color: var(--accent); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="title-preset-a">Preset in Package A</div>
+      <button id="btn-copy-whole-preset-a-to-b" class="btn-action" style="font-size: 8px; padding: 1px 5px; background: rgba(0, 163, 224, 0.2); border: 1px solid var(--highlight); color: var(--highlight); flex-shrink: 0;" title="Copy this entire preset into Package B">
+       ➕ Clone to B
+      </button>
+     </div>
+     
+     <div id="meta-preset-a" style="font-size: 8.5px; color: var(--muted); margin-bottom: 6px; line-height: 1.3;">
+      Select a preset above to inspect.
+     </div>
+
+     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <span style="font-size: 9px; font-weight: bold; color: var(--text-heading);" id="lbl-steps-count-a">Steps: 0</span>
+      <div style="display: flex; gap: 3px;">
+       <button id="btn-open-paste-modal-a" class="btn-action" style="font-size: 8px; padding: 1px 4px; background: #334155; color: #f1f5f9;" title="Paste JSON steps into this preset">
+        📋 Paste Steps
+       </button>
+       <button id="btn-select-all-steps-a" class="btn-action" style="font-size: 8px; padding: 1px 4px; background: #1e293b; color: #94a3b8;" title="Select/Deselect all steps in A">
+        Select All
+       </button>
+      </div>
+     </div>
+
+     <!-- Steps list A -->
+     <div id="steps-list-compare-a" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 9px;">
+      <div style="color: var(--muted); text-align: center; padding: 15px 0;">No preset selected.</div>
+     </div>
+    </div>
+
+    <!-- RIGHT: PRESET IN PACKAGE B -->
+    <div id="card-compare-b" style="background: var(--code-bg); border: 1px solid var(--border-soft); border-radius: 6px; padding: 8px; display: flex; flex-direction: column;">
+     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-soft); padding-bottom: 4px; margin-bottom: 6px;">
+      <div style="font-weight: bold; color: var(--highlight); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="title-preset-b">Preset in Package B</div>
+      <button id="btn-copy-whole-preset-b-to-a" class="btn-action" style="font-size: 8px; padding: 1px 5px; background: rgba(0, 214, 143, 0.2); border: 1px solid var(--accent); color: var(--accent); flex-shrink: 0;" title="Copy this entire preset into Package A">
+       ➕ Clone to A
+      </button>
+     </div>
+     
+     <div id="meta-preset-b" style="font-size: 8.5px; color: var(--muted); margin-bottom: 6px; line-height: 1.3;">
+      Select a preset above to inspect.
+     </div>
+
+     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <span style="font-size: 9px; font-weight: bold; color: var(--text-heading);" id="lbl-steps-count-b">Steps: 0</span>
+      <div style="display: flex; gap: 3px;">
+       <button id="btn-open-paste-modal-b" class="btn-action" style="font-size: 8px; padding: 1px 4px; background: #334155; color: #f1f5f9;" title="Paste JSON steps into this preset">
+        📋 Paste Steps
+       </button>
+       <button id="btn-select-all-steps-b" class="btn-action" style="font-size: 8px; padding: 1px 4px; background: #1e293b; color: #94a3b8;" title="Select/Deselect all steps in B">
+        Select All
+       </button>
+      </div>
+     </div>
+
+     <!-- Steps list B -->
+     <div id="steps-list-compare-b" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 9px;">
+      <div style="color: var(--muted); text-align: center; padding: 15px 0;">No preset selected.</div>
+     </div>
+    </div>
+
+   </div>
+
+   <!-- Master Apply / Save & Export Bar -->
+   <div style="background: rgba(15, 23, 42, 0.6); padding: 8px; border-radius: 6px; border: 1px solid var(--border-soft); margin-top: 10px;">
+    <div style="font-size: 9px; font-weight: bold; color: var(--text-heading); margin-bottom: 5px;">
+     💾 Apply to Workspace or Export Packages:
+    </div>
+    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+     <button id="btn-apply-a-to-workspace" class="btn-action" style="flex: 1; min-width: 110px; font-size: 9px; background: #059669; color: white;" title="Save all presets in Package A as active presets">
+      💾 Save Pkg A to Admin
+     </button>
+     <button id="btn-apply-b-to-workspace" class="btn-action" style="flex: 1; min-width: 110px; font-size: 9px; background: #0284c7; color: white;" title="Save all presets in Package B as active presets">
+      💾 Save Pkg B to Admin
+     </button>
+     <button id="btn-export-diff-json" class="btn-action" style="flex: 1; min-width: 100px; font-size: 9px; background: #7c3aed; color: white;" title="Export merged JSON with all changes">
+      📥 Export Merged JSON
+     </button>
+    </div>
+   </div>
+
+  </div>
+ </div>
+
+ <!-- Modal: Create New Preset from Selected Steps -->
+ <div id="modal-create-from-steps" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 99999; align-items: center; justify-content: center;">
+  <div class="modal-card" style="width: 350px; box-sizing: border-box;">
+   <div style="font-weight: bold; color: #a78bfa; margin-bottom: 6px; font-size: 11px;">✨ Create New Preset from Selected Steps</div>
+   <div style="font-size: 9px; color: var(--muted); margin-bottom: 8px;" id="lbl-create-steps-summary">0 steps selected</div>
+   
+   <label style="font-size: 9px; color: var(--muted); display: block;">New Preset Title / Key:</label>
+   <input type="text" id="input-new-from-steps-key" placeholder="e.g. UIF Status & Payment Follow-Up" style="margin-bottom: 6px;">
+   
+   <label style="font-size: 9px; color: var(--muted); display: block;">Case Title on CRM:</label>
+   <input type="text" id="input-new-from-steps-title" placeholder="e.g. CLAIM STATUS ENQUIRY" style="margin-bottom: 6px;">
+
+   <label style="font-size: 9px; color: var(--muted); display: block;">Department / Category:</label>
+   <input type="text" id="input-new-from-steps-cat" placeholder="e.g. Claims Application (Online Benefits)" style="margin-bottom: 6px;">
+
+   <label style="font-size: 9px; color: var(--muted); display: block;">Save Preset Into:</label>
+   <select id="select-new-from-steps-target" class="dropdown" style="width: 100%; margin-bottom: 8px;">
+    <option value="BOTH_AND_ACTIVE">Save to Active Admin Presets + Package A + B</option>
+    <option value="PKG_A">Package A Only</option>
+    <option value="PKG_B">Package B Only</option>
+   </select>
+
+   <div class="buttons-row">
+    <button id="btn-cancel-new-from-steps" class="btn-action btn-stop">Cancel</button>
+    <button id="btn-save-new-from-steps" class="btn-action btn-play">Create Preset</button>
+   </div>
+  </div>
+ </div>
+
+ <!-- Modal: Paste Raw Steps JSON -->
+ <div id="modal-paste-raw-steps" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 99999; align-items: center; justify-content: center;">
+  <div class="modal-card" style="width: 350px; box-sizing: border-box;">
+   <div style="font-weight: bold; color: var(--accent); margin-bottom: 6px; font-size: 11px;">📋 Paste Steps JSON into Preset</div>
+   <p style="font-size: 9px; color: var(--muted); margin: 0 0 6px 0;">
+    Paste an array of step objects: <code>[ { "action": "input", "target": "...", "inputValue": "..." } ]</code>
+   </p>
+   
+   <textarea id="txt-paste-raw-steps" class="notes-textarea" style="height: 120px; font-family: monospace; font-size: 9px; margin-bottom: 6px;" placeholder='[&#10;  { "action": "input", "target": "[formcontrolname=\"case_title\"]", "inputValue": "STATUS" }&#10;]'></textarea>
+
+   <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+    <label style="flex: 1; font-size: 9px; color: var(--muted); display: flex; align-items: center; gap: 4px;">
+     <input type="radio" name="paste-steps-mode" value="APPEND" checked> Append to steps
+    </label>
+    <label style="flex: 1; font-size: 9px; color: var(--muted); display: flex; align-items: center; gap: 4px;">
+     <input type="radio" name="paste-steps-mode" value="REPLACE"> Overwrite all steps
+    </label>
+   </div>
+
+   <div class="buttons-row">
+    <button id="btn-cancel-paste-steps" class="btn-action btn-stop">Cancel</button>
+    <button id="btn-save-paste-steps" class="btn-action btn-play">Import Steps</button>
+   </div>
+  </div>
+ </div>
+
+ <!-- Modal: Paste Full Package JSON -->
+ <div id="modal-paste-package-json" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 99999; align-items: center; justify-content: center;">
+  <div class="modal-card" style="width: 350px; box-sizing: border-box;">
+   <div style="font-weight: bold; color: var(--highlight); margin-bottom: 6px; font-size: 11px;" id="title-paste-package-modal">📋 Paste Package JSON</div>
+   <p style="font-size: 9px; color: var(--muted); margin: 0 0 6px 0;">
+    Paste full exported package JSON or profiles object:
+   </p>
+   
+   <textarea id="txt-paste-package-json" class="notes-textarea" style="height: 130px; font-family: monospace; font-size: 9px; margin-bottom: 8px;" placeholder='{ "profiles": { "My Preset": { "caseTitle": "...", "steps": [...] } } }'></textarea>
+
+   <div class="buttons-row">
+    <button id="btn-cancel-paste-package" class="btn-action btn-stop">Cancel</button>
+    <button id="btn-save-paste-package" class="btn-action btn-play">Load Package</button>
+   </div>
+  </div>
+ </div>
 
  <!-- Modal for Creating / Editing Profile Presets -->
  <div id="modal-add-preset" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
@@ -859,13 +1290,19 @@
    <label style="font-size: 9px; color: var(--muted); display: block;">Department / Category Group:</label>
    <select id="new-preset-category" class="dropdown" style="width: 100%; margin-bottom: 6px;">
     <option value="UIF Online Registration">UIF Online Registration</option>
-    <option value="UIF Claims & Benefits">UIF Claims & Benefits</option>
-    <option value="Compliance & Audit">Compliance & Audit</option>
+    <option value="UIF Claims &amp; Benefits">UIF Claims &amp; Benefits</option>
+    <option value="Compliance &amp; Audit">Compliance &amp; Audit</option>
     <option value="General Support">General Support</option>
    </select>
 
-   <label style="font-size: 9px; color: var(--muted); display: block;">Default Notes Template:</label>
-   <textarea id="new-preset-notes" class="notes-textarea" style="height: 60px; margin-bottom: 8px;" placeholder="Structured notes template..."></textarea>
+   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+    <label style="font-size: 9px; color: var(--muted); display: block;">Default Notes Template:</label>
+    <div style="display: flex; gap: 4px;">
+     <button type="button" id="btn-preset-token-date" class="btn-action" style="background: rgba(13, 148, 136, 0.3); border: 1px solid #0d9488; color: #2dd4bf; padding: 1px 5px; font-size: 8.5px; border-radius: 3px; cursor: pointer;">+ [DATE]</button>
+     <button type="button" id="btn-preset-token-number" class="btn-action" style="background: rgba(2, 132, 199, 0.3); border: 1px solid #0284c7; color: #38bdf8; padding: 1px 5px; font-size: 8.5px; border-radius: 3px; cursor: pointer;">+ [NUMBER]</button>
+    </div>
+   </div>
+   <textarea id="new-preset-notes" class="notes-textarea" style="height: 60px; margin-bottom: 8px;" placeholder="Structured notes template... e.g. Submitted claim on [DATE] with claim ID [NUMBER]"></textarea>
 
    <div class="buttons-row">
     <button id="btn-cancel-preset" class="btn-action btn-stop">Cancel</button>
@@ -894,9 +1331,8 @@
     <label style="font-size: 9px; color: var(--muted); display: block;">Input Text / Selected Option Text:</label>
     <input type="text" id="manual-step-value" placeholder='e.g., Gauteng or UIF Online Registration' style="margin-bottom: 4px;">
     <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-     <button type="button" id="btn-modal-date-token" class="btn-action" style="flex: 1; font-size: 8.5px; background: rgba(13, 148, 136, 0.3); border: 1px solid #0d9488; color: #2dd4bf; padding: 2px 4px;"> + [DATE]</button>
-     <button type="button" id="btn-modal-number-token" class="btn-action" style="flex: 1; font-size: 8.5px; background: rgba(2, 132, 199, 0.3); border: 1px solid #0284c7; color: #38bdf8; padding: 2px 4px;"> + [NUMBER]</button>
-     <button type="button" id="btn-modal-id-token" class="btn-action" style="flex: 1; font-size: 8.5px; background: rgba(124, 58, 237, 0.3); border: 1px solid #7c3aed; color: #c4b5fd; padding: 2px 4px;"> + [ID_NUMBER]</button>
+     <button type="button" id="btn-modal-date-token" class="btn-action" style="flex: 1; font-size: 8.5px; background: rgba(13, 148, 136, 0.3); border: 1px solid #0d9488; color: #2dd4bf; padding: 2px 4px;">📅 + [DATE]</button>
+     <button type="button" id="btn-modal-number-token" class="btn-action" style="flex: 1; font-size: 8.5px; background: rgba(2, 132, 199, 0.3); border: 1px solid #0284c7; color: #38bdf8; padding: 2px 4px;">🔢 + [NUMBER]</button>
     </div>
    </div>
 
@@ -905,6 +1341,8 @@
     <button id="btn-save-manual-step" class="btn-action btn-play">Save Step</button>
    </div>
   </div>
+ </div>
+
  <!-- Modal for Importing Roster Sheet (Agent, TL, Pod Mapping) -->
  <div id="modal-import-roster" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 99999; align-items: center; justify-content: center;">
   <div class="modal-card" style="width: 360px; box-sizing: border-box;">
@@ -929,7 +1367,8 @@
     <button id="btn-cancel-roster-mapping" class="btn-action btn-stop">Cancel</button>
     <button id="btn-save-roster-mapping" class="btn-action btn-play">Save Roster Sheet</button>
    </div>
- <!-- Report Issue & Auto-Screenshot Modal -->
+  </div>
+ </div><!-- Report Issue & Auto-Screenshot Modal -->
  <div id="modal-report-issue" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; padding: 10px;">
   <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-width: 360px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); font-size: 10px; color: var(--text);">
    

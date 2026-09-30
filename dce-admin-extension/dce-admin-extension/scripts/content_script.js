@@ -91,11 +91,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // --- RECORDING HOOKS ---
+let lastRecordedTargetElement = null;
+
+function updatePodActiveFieldDisplay(el) {
+  const statusEl = document.getElementById('pod-token-status');
+  if (statusEl && el) {
+    const name = el.getAttribute('formcontrolname') || el.name || el.placeholder || el.id || el.getAttribute('aria-label') || "Form field";
+    statusEl.innerHTML = `Active field: <b style="color: #60a5fa;">[${name}]</b>`;
+  }
+}
+
+window.addEventListener('focusin', (e) => {
+  if (!isRecordingActive) return;
+  if (e.target.closest('#admin-recording-banner')) return;
+  if (e.target.matches('input, textarea, [contenteditable="true"], select')) {
+    lastRecordedTargetElement = e.target;
+    updatePodActiveFieldDisplay(e.target);
+  }
+}, true);
+
+window.addEventListener('pointerdown', (e) => {
+  if (!isRecordingActive) return;
+  if (e.target.closest('#admin-recording-banner')) return;
+  if (e.target.matches('input, textarea, [contenteditable="true"], select')) {
+    lastRecordedTargetElement = e.target;
+    updatePodActiveFieldDisplay(e.target);
+  }
+}, true);
+
 window.addEventListener('input', (e) => {
   if (!isRecordingActive) return;
   const target = e.target;
-  if (target.matches('input[type="text"], input:not([type]), textarea, [contenteditable="true"]')) {
+  if (target.matches('input, textarea, [contenteditable="true"]')) {
     if (target.closest('#admin-recording-banner')) return;
+    lastRecordedTargetElement = target;
+    updatePodActiveFieldDisplay(target);
     const selector = generateRobustSelector(target);
     const textVal = target.value || target.innerText || "";
 
@@ -141,8 +171,13 @@ window.addEventListener('click', (e) => {
   if (!isRecordingActive) return;
   if (e.target.closest('#admin-recording-banner')) return;
 
+  if (e.target.matches('input, textarea, [contenteditable="true"], select')) {
+    lastRecordedTargetElement = e.target;
+    updatePodActiveFieldDisplay(e.target);
+  }
+
   const target = e.target.closest('button, a, input[type="button"], input[type="submit"]') || e.target;
-  if (target.matches('input[type="text"], textarea, select')) return;
+  if (target.matches('input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]), textarea, select')) return;
 
   const selector = generateRobustSelector(target);
   const stepData = {
@@ -274,16 +309,26 @@ async function replayRecordedSteps(steps) {
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
 
-    // Handle manual wait / pause step: Pause execution until agent clicks Resume
-    if (step.action === "wait_input" || step.action === "pause") {
+    // Handle manual wait / pause step: Pause execution until user clicks Resume
+    const isWaitInputStep = step.action === "wait_input" || 
+                            step.action === "pause" || 
+                            step.requiresInput === true || 
+                            (step.action === "input" && (!step.inputValue || step.inputValue.trim() === "" || /\[DATE\]|\[NUMBER\]/i.test(step.inputValue)));
+
+    if (isWaitInputStep) {
       let element = locateTargetElement(step.target);
+      let fieldName = step.fieldName || "";
+      if (!fieldName && element) {
+        fieldName = element.getAttribute('formcontrolname') || element.name || element.placeholder || element.id || "Active Field";
+      }
       if (element) {
         element.scrollIntoView({ block: 'center' });
+        element.focus();
         element.style.outline = "3px solid #7c3aed";
         element.style.boxShadow = "0 0 16px rgba(124, 58, 237, 0.9)";
       }
-      showPauseBanner(true, `Step ${i + 1} of ${steps.length}`);
-      chrome.runtime.sendMessage({ action: "MACRO_PAUSED", stepIndex: i + 1 });
+      showPauseBanner(true, `Step ${i + 1} of ${steps.length}: ${fieldName}`);
+      chrome.runtime.sendMessage({ action: "MACRO_PAUSED", stepIndex: i + 1, totalSteps: steps.length, fieldName: fieldName });
 
       await new Promise(resolve => {
         macroResumeResolver = resolve;
@@ -312,15 +357,10 @@ async function replayRecordedSteps(steps) {
       element.focus();
       
       let rawVal = step.inputValue || "";
-      // Resolve dynamic date and number tokens
+      // Use live user-entered values directly without auto-generating random numbers or fake IDs
       let resolvedVal = rawVal
         .replace(/\[DATE\]|\[Insert Date\]/gi, element.type === 'date' ? todayIso : todayStd)
-        .replace(/\[TODAY\]/gi, element.type === 'date' ? todayIso : todayStd)
-        .replace(/\[DUE_DATE\]/gi, element.type === 'date' ? nextWeekIso : formatDateToStandard(new Date(Date.now() + 7 * 86400000)))
-        .replace(/\[NUMBER\]/gi, () => Math.floor(100000 + Math.random() * 900000).toString())
-        .replace(/\[ID_NUMBER\]/gi, "8501015029087")
-        .replace(/\[REF_NUMBER\]/gi, "C-2026-" + Math.floor(10000 + Math.random() * 90000))
-        .replace(/\[AMOUNT\]/gi, "R 1,250.00");
+        .replace(/\[TODAY\]/gi, element.type === 'date' ? todayIso : todayStd);
 
       element.value = resolvedVal;
       try {
@@ -547,6 +587,93 @@ function updateBannerStepCount() {
   }
 }
 
+// Helper to insert token into the active form field during live recording
+function insertTokenIntoField(tokenType) {
+  let target = lastRecordedTargetElement;
+
+  if (!target || !target.isConnected) {
+    const active = document.activeElement;
+    if (active && active !== document.body && !active.closest('#admin-recording-banner') && active.matches('input, textarea, [contenteditable="true"]')) {
+      target = active;
+      lastRecordedTargetElement = target;
+    }
+  }
+
+  const podStatusEl = document.getElementById('pod-token-status');
+
+  if (!target || !target.isConnected) {
+    if (podStatusEl) {
+      podStatusEl.innerHTML = `<span style="color: #f87171; font-weight: bold;">⚠️ Click a form field on page first!</span>`;
+      setTimeout(() => updatePodActiveFieldDisplay(lastRecordedTargetElement), 3200);
+    }
+    return;
+  }
+
+  const fieldName = target.getAttribute('formcontrolname') || target.name || target.placeholder || target.id || target.getAttribute('aria-label') || "Form Field";
+  const selector = generateRobustSelector(target);
+  const isDateInput = target.type === 'date';
+  const isNumberInput = target.type === 'number';
+
+  // Apply value to DOM for visual feedback and Angular form binding
+  if (tokenType === '[DATE]') {
+    const domVal = isDateInput ? formatDateISO(new Date()) : '[DATE]';
+    target.value = domVal;
+    try {
+      const proto = target.tagName === "TEXTAREA" ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+      const nativeSetter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+      if (nativeSetter) nativeSetter.call(target, domVal);
+    } catch(err) {}
+  } else if (tokenType === '[NUMBER]') {
+    const domVal = isNumberInput ? '0' : '[NUMBER]';
+    target.value = domVal;
+    try {
+      const proto = target.tagName === "TEXTAREA" ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+      const nativeSetter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+      if (nativeSetter) nativeSetter.call(target, domVal);
+    } catch(err) {}
+  }
+
+  // Dispatch events to trigger Angular change detection
+  target.dispatchEvent(new Event('input', { bubbles: true }));
+  target.dispatchEvent(new Event('change', { bubbles: true }));
+  target.dispatchEvent(new Event('blur', { bubbles: true }));
+
+  // Visual pulse confirmation on the page element
+  const prevOutline = target.style.outline;
+  const prevBoxShadow = target.style.boxShadow;
+  target.style.outline = "3px solid #14b8a6";
+  target.style.boxShadow = "0 0 16px rgba(20, 184, 166, 0.8)";
+  setTimeout(() => {
+    target.style.outline = prevOutline;
+    target.style.boxShadow = prevBoxShadow;
+  }, 1400);
+
+  // Construct recorded step data
+  const stepData = {
+    action: "input",
+    target: selector,
+    inputValue: tokenType,
+    fieldName: fieldName,
+    requiresInput: true,
+    delay: 500
+  };
+
+  const lastStep = currentRecordingBuffer[currentRecordingBuffer.length - 1];
+  if (lastStep && lastStep.action === "input" && lastStep.target === selector) {
+    currentRecordingBuffer[currentRecordingBuffer.length - 1] = stepData;
+  } else {
+    currentRecordingBuffer.push(stepData);
+  }
+
+  chrome.runtime.sendMessage({ action: "STEP_CAPTURED", step: stepData });
+  updateBannerStepCount();
+
+  if (podStatusEl) {
+    podStatusEl.innerHTML = `<span style="color: #34d399; font-weight: bold;">✓ Inserted ${tokenType} into [${fieldName}]</span>`;
+    setTimeout(() => updatePodActiveFieldDisplay(target), 3000);
+  }
+}
+
 // Show Theme-Styled Interactive Floating In-Page Recording Pod
 function showAdminRecordingBanner(show, profileName = "") {
   const old = document.getElementById('admin-recording-banner');
@@ -589,133 +716,80 @@ function showAdminRecordingBanner(show, profileName = "") {
     </div>
 
     <div style="font-size: 10px; color: #94a3b8;">
-      Preset: <b style="color: #60a5fa;">${profileName || "Active Preset"}</b><br>
-      <span style="color: #cbd5e1;">Click inputs/dropdowns on page to record. Insert numbers/dates or stop below:</span>
+      Preset: <b style="color: #60a5fa;">${profileName || "Active Preset"}</b>
     </div>
 
-    <!-- Number Dropdown & Input Box on Floating Pod -->
-    <div style="display: flex; flex-direction: column; gap: 4px; background: rgba(30, 41, 59, 0.6); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
-      <div style="font-size: 9.5px; color: #94a3b8; font-weight: bold;">Number Dropdown & Input:</div>
-      <div style="display: flex; gap: 4px; align-items: center;">
-        <select id="pod-number-select" style="flex: 1; background: #0f172a; color: #38bdf8; border: 1px solid #0284c7; border-radius: 4px; padding: 3px 4px; font-size: 10px; outline: none; min-width: 120px;">
-          <option value="[NUMBER]">[NUMBER] Dynamic Number</option>
-          <option value="[ID_NUMBER]">[ID_NUMBER] SA ID Number</option>
-          <option value="[REF_NUMBER]">[REF_NUMBER] Claim Reference</option>
-          <option value="[AMOUNT]">[AMOUNT] Benefit Amount</option>
-          <option value="1000">1000</option>
-          <option value="5000">5000</option>
-          <option value="CUSTOM">Custom Input...</option>
-        </select>
-        <input type="text" id="pod-custom-number-input" placeholder="Type number..." style="flex: 1; display: none; background: #0f172a; color: #f1f5f9; border: 1px solid #475569; border-radius: 4px; padding: 3px 5px; font-size: 10px; outline: none; min-width: 100px;">
-        <button id="pod-btn-insert-number-val" style="background: rgba(2, 132, 199, 0.4); border: 1px solid #0284c7; color: #38bdf8; border-radius: 4px; padding: 3px 8px; font-size: 9.5px; font-weight: bold; cursor: pointer;">
-          Insert
-        </button>
-      </div>
+    <!-- Active Field Display -->
+    <div id="pod-token-status" style="font-size: 10px; color: #94a3b8; background: rgba(15, 23, 42, 0.6); padding: 5px 8px; border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.08); min-height: 22px; display: flex; align-items: center;">
+      Active field: <span style="color: #64748b; margin-left: 4px;">(Click any field on page)</span>
     </div>
 
-    <!-- Quick Date Token Injector on In-Page Pod -->
-    <div style="display: flex; gap: 4px;">
-      <button id="pod-btn-date" style="background: rgba(13, 148, 136, 0.3); border: 1px solid #0d9488; color: #2dd4bf; border-radius: 4px; padding: 3px 6px; font-size: 9.5px; cursor: pointer; flex: 1;" title="Insert dynamic Date token into last field">
-        + Date Token
+    <!-- Token Injection Buttons (Strictly [DATE] and [NUMBER]) -->
+    <div style="display: flex; gap: 6px;">
+      <button id="pod-btn-date" type="button" style="background: rgba(13, 148, 136, 0.35); border: 1px solid #0d9488; color: #2dd4bf; border-radius: 6px; padding: 6px 8px; font-size: 10.5px; font-weight: bold; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 2px 6px rgba(13, 148, 136, 0.2);" title="Insert [DATE] token into active field">
+        📅 + [DATE]
       </button>
-      <button id="pod-btn-today-date" style="background: rgba(51, 65, 85, 0.6); border: 1px solid #475569; color: #e2e8f0; border-radius: 4px; padding: 3px 6px; font-size: 9.5px; cursor: pointer; flex: 1;" title="Insert today's date">
-        + Today's Date
+      <button id="pod-btn-number" type="button" style="background: rgba(2, 132, 199, 0.35); border: 1px solid #0284c7; color: #38bdf8; border-radius: 6px; padding: 6px 8px; font-size: 10.5px; font-weight: bold; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2);" title="Insert [NUMBER] token into active field">
+        🔢 + [NUMBER]
       </button>
     </div>
 
-    <!-- In-Page Stop Button directly on page pod -->
+    <!-- Pod Action Buttons: Pause Step & Stop -->
     <div style="display: flex; gap: 6px; margin-top: 2px;">
-      <button id="pod-btn-wait-input" style="background: #334155; border: 1px solid #475569; color: #f1f5f9; border-radius: 5px; padding: 5px 8px; font-size: 10px; font-weight: bold; cursor: pointer; flex: 1;">
-        + Pause Step
+      <button id="pod-btn-wait-input" type="button" style="background: #334155; border: 1px solid #475569; color: #f1f5f9; border-radius: 5px; padding: 5px 8px; font-size: 10px; font-weight: bold; cursor: pointer; flex: 1;" title="Insert a Pause step for manual on-screen agent input">
+        ⏸ + Pause Step
       </button>
-      <button id="pod-btn-stop" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid #f87171; color: white; border-radius: 5px; padding: 5px 10px; font-size: 10px; font-weight: bold; cursor: pointer; flex: 1.5; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);">
-        Stop Recording & Save
+      <button id="pod-btn-stop" type="button" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid #f87171; color: white; border-radius: 5px; padding: 5px 10px; font-size: 10px; font-weight: bold; cursor: pointer; flex: 1.4; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);">
+        ⏹ Stop & Save
       </button>
     </div>
   `;
 
   document.body.appendChild(banner);
 
-  const podNumberSelect = document.getElementById('pod-number-select');
-  const podCustomInput = document.getElementById('pod-custom-number-input');
-  const podBtnInsertNum = document.getElementById('pod-btn-insert-number-val');
+  if (lastRecordedTargetElement) {
+    updatePodActiveFieldDisplay(lastRecordedTargetElement);
+  }
 
-  podNumberSelect?.addEventListener('change', () => {
-    if (podNumberSelect.value === 'CUSTOM') {
-      if (podCustomInput) {
-        podCustomInput.style.display = 'block';
-        podCustomInput.focus();
-      }
-    } else {
-      if (podCustomInput) podCustomInput.style.display = 'none';
-    }
-  });
-
-  podBtnInsertNum?.addEventListener('click', (e) => {
+  // Pod Event Handlers
+  document.getElementById('pod-btn-date')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    let valToInsert = podNumberSelect.value;
-    if (valToInsert === 'CUSTOM') {
-      valToInsert = podCustomInput ? podCustomInput.value.trim() : "";
-      if (!valToInsert) valToInsert = "[NUMBER]";
-    }
+    insertTokenIntoField('[DATE]');
+  });
 
-    const activeEl = document.activeElement;
-    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
-      activeEl.value = valToInsert;
-      activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-      activeEl.dispatchEvent(new Event('change', { bubbles: true }));
-    } else {
-      const stepData = { action: "input", target: "active_field", inputValue: valToInsert, delay: 500 };
-      currentRecordingBuffer.push(stepData);
-      chrome.runtime.sendMessage({ action: "STEP_CAPTURED", step: stepData });
-      updateBannerStepCount();
+  document.getElementById('pod-btn-number')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    insertTokenIntoField('[NUMBER]');
+  });
+
+  document.getElementById('pod-btn-wait-input')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    let targetSelector = "MANUAL_INPUT";
+    let fieldName = "Manual Action Required";
+    if (lastRecordedTargetElement && lastRecordedTargetElement.isConnected) {
+      targetSelector = generateRobustSelector(lastRecordedTargetElement);
+      fieldName = lastRecordedTargetElement.getAttribute('formcontrolname') || lastRecordedTargetElement.name || lastRecordedTargetElement.placeholder || lastRecordedTargetElement.id || "Active Field";
+    }
+    const stepData = {
+      action: "wait_input",
+      target: targetSelector,
+      fieldName: fieldName,
+      requiresInput: true,
+      delay: 800
+    };
+    currentRecordingBuffer.push(stepData);
+    chrome.runtime.sendMessage({ action: "STEP_CAPTURED", step: stepData });
+    updateBannerStepCount();
+    const statusEl = document.getElementById('pod-token-status');
+    if (statusEl) {
+      statusEl.innerHTML = `<span style="color: #c4b5fd; font-weight: bold;">⏸ Added Pause Step for [${fieldName}]</span>`;
     }
   });
 
-  // In-Page Pod Event Handlers
   document.getElementById('pod-btn-stop')?.addEventListener('click', (e) => {
     e.stopPropagation();
     isRecordingActive = false;
     showAdminRecordingBanner(false);
     chrome.runtime.sendMessage({ action: "STOP_RECORDING_FROM_BANNER", steps: currentRecordingBuffer });
-  });
-
-  document.getElementById('pod-btn-date')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const activeEl = document.activeElement;
-    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
-      activeEl.value = '[DATE]';
-      activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-      activeEl.dispatchEvent(new Event('change', { bubbles: true }));
-    } else {
-      const stepData = { action: "input", target: "active_field", inputValue: "[DATE]", delay: 500 };
-      currentRecordingBuffer.push(stepData);
-      chrome.runtime.sendMessage({ action: "STEP_CAPTURED", step: stepData });
-      updateBannerStepCount();
-    }
-  });
-
-  document.getElementById('pod-btn-today-date')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const todayStr = formatDateToStandard(new Date());
-    const activeEl = document.activeElement;
-    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
-      activeEl.value = todayStr;
-      activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-      activeEl.dispatchEvent(new Event('change', { bubbles: true }));
-    } else {
-      const stepData = { action: "input", target: "active_field", inputValue: todayStr, delay: 500 };
-      currentRecordingBuffer.push(stepData);
-      chrome.runtime.sendMessage({ action: "STEP_CAPTURED", step: stepData });
-      updateBannerStepCount();
-    }
-  });
-
-  document.getElementById('pod-btn-wait-input')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const stepData = { action: "wait_input", target: "MANUAL_INPUT", delay: 1000 };
-    currentRecordingBuffer.push(stepData);
-    chrome.runtime.sendMessage({ action: "STEP_CAPTURED", step: stepData });
-    updateBannerStepCount();
   });
 }
