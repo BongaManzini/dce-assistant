@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      --bg-main: #1e222b;
+      --bg-card: #252a34;
+      --bg-input: #181b22;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent-blue: #60a5fa;
+      --accent-green: #34d399;
+      --accent-orange: #f97316;
+      --accent-red: #f87171;
+      --border-color: #3f4756;
+
+      margin: 0;
+      padding: 15px;
+      background: var(--bg-main); 
+      color: var(--text-main); 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      font-size: 13px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    body.theme-nord {
+      --bg-main: #2e3440;
+      --bg-card: #3b4252;
+      --bg-input: #242933;
+      --text-main: #d8dee9;
+      --text-muted: #81a1c1;
+      --accent-blue: #88c0d0;
+      --accent-green: #a3be8c;
+      --accent-orange: #d08770;
+      --accent-red: #bf616a;
+      --border-color: #4c566a;
+    }
+
+    body.theme-olive {
+      --bg-main: #1c1e17;
+      --bg-card: #24271d;
+      --bg-input: #161813;
+      --text-main: #e6e8e0;
+      --text-muted: #8c967a;
+      --accent-blue: #7fa2a6;
+      --accent-green: #9cb67e;
+      --accent-orange: #c48a5f;
+      --accent-red: #c96f6f;
+      --border-color: #383d2e;
+    }
+
+    .header {
+      font-weight: bold; 
+      margin-bottom: 12px; 
+      border-bottom: 2px solid var(--accent-blue); 
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      letter-spacing: 0.5px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      display: inline-block;
+      align-self: center;
+    }
+    .theme-selector-container {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+    .theme-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .theme-btn:hover { border-color: var(--accent-blue); }
+
+    .tab-navigation-bar {
+      display: flex;
+      background: var(--bg-input);
+      padding: 4px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border-color);
+    }
+    .tab-trigger-button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px;
+      font-weight: bold;
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .tab-trigger-button.tab-active {
+      background: var(--bg-card);
+      color: var(--accent-blue);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    .tab-module-content-pane { display: none; }
+    .tab-module-content-pane.pane-visible { display: flex; flex-direction: column; gap: 12px; }
+
+    .dashboard-layout-root { display: flex; flex-direction: column; gap: 12px; }
+    .movable-section-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; }
+    .section-grab-handle { font-weight: bold; color: var(--accent-blue); font-size: 12px; margin-bottom: 4px; cursor: grab; user-select: none; padding-bottom: 4px; border-bottom: 1px dashed var(--border-color); }
+    .movable-section-card.dragging-active { opacity: 0.4; border: 1px dashed var(--accent-blue); }
+    .section-explanation { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.4; }
+    .group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .group-checkbox { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    
+    .paste-textarea { width: 100%; height: 70px; background: var(--bg-input); color: var(--accent-blue); border: 1px dashed var(--accent-blue); border-radius: 6px; padding: 8px; font-family: monospace; font-size: 11px; resize: none; box-sizing: border-box; outline: none; }
+    .range-tree-container { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; max-height: 160px; overflow-y: auto; padding: 6px; }
+    .category-accordion-block { margin-bottom: 4px; border-radius: 4px; overflow: hidden; }
+    .category-header-row { background: var(--bg-card); padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid var(--border-color); }
+    .category-title { font-weight: bold; color: #ffffff; font-size: 12px; }
+    .category-dropdown-content { background: var(--bg-main); border: 1px solid var(--border-color); border-top: none; padding: 6px; display: none; flex-direction: column; gap: 4px; }
+    .sub-option-row { display: flex; align-items: center; gap: 8px; padding: 2px 4px; }
+    .sub-option-row label { color: var(--text-main); font-size: 11px; cursor: pointer; }
+    .steps-container { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; height: 140px; overflow-y: auto; padding: 8px; font-family: monospace; font-size: 11px; }
+    .step-item { padding: 8px; border-bottom: 1px solid var(--border-color); background: var(--bg-card); margin-bottom: 5px; border-radius: 6px; color: var(--text-main); display: flex; flex-direction: column; border-left: 4px solid var(--text-muted); }
+    .step-item.disabled-state-muted { opacity: 0.35; background: var(--bg-input); }
+    .step-info { flex-grow: 1; cursor: pointer; }
+    .picker-dropdown-select { flex-grow: 1; max-width: 70%; background: var(--bg-card); color: white; border: 1px solid var(--border-color); padding: 5px; border-radius: 6px; font-size: 11px; }
+    .audit-log-container { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; height: 110px; overflow-y: auto; padding: 6px; font-family: monospace; font-size: 11px; }
+    .audit-row { padding: 4px; border-bottom: 1px solid var(--border-color); color: var(--text-main); line-height: 1.3; }
+    
+    input[type="number"], input[type="text"] { background: var(--bg-input); color: white; border: 1px solid var(--border-color); border-radius: 6px; padding: 5px; outline: none; }
+    input[type="number"] { width: 70px; text-align: center; }
+    input[type="checkbox"] { accent-color: var(--accent-blue); cursor: pointer; }
+    .buttons-row { display: flex; gap: 6px; margin-top: 8px; }
+    button.btn-action { flex: 1; padding: 10px 8px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; font-size: 11px; }
+    .btn-rec { background-color: var(--accent-red); }
+    .btn-play { background-color: var(--accent-blue); }
+    .btn-stop { background-color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span>IT Support Tools Hub</span>
+    <span id="status-dot" class="status-dot"></span>
+  </div>
+
+  <div class="theme-selector-container">
+    <span style="color: var(--text-muted); font-size: 11px;">Visual Theme Profile:</span>
+    <button class="theme-btn" id="theme-btn-slate">Midnight Slate</button>
+    <button class="theme-btn" id="theme-btn-nord">Nordic Frost</button>
+    <button class="theme-btn" id="theme-btn-olive">Muted Olive</button>
+  </div>
+
+  <div class="tab-navigation-bar">
+    <button class="tab-trigger-button tab-active" id="tab-btn-closer">Ticket Auto-Closer</button>
+    <button class="tab-trigger-button" id="tab-btn-unlocker">Account Unlocker Dashboard</button>
+  </div>
+
+  <!-- TAB 1: TICKET CLOSER MODULE -->
+  <div class="tab-module-content-pane pane-visible" id="pane-closer-module">
+    <div class="movable-section-card" style="background: var(--bg-input); border-color: var(--border-color);">
+      <div class="group" style="margin-bottom: 4px;">
+        <span>Current Ticket Position Number:</span>
+        <span id="lbl-progress" style="color: var(--accent-blue); font-weight: bold;">0</span>
+      </div>
+      <div class="group">
+        <span>Total Finished Tickets:</span>
+        <span id="lbl-closed-count" style="color: var(--accent-green); font-weight: bold; font-size: 14px;">0</span>
+      </div>
+    </div>
+
+    <div class="dashboard-layout-root" id="sortable-dashboard-container">
+      <div class="movable-section-card" draggable="true" id="section-actions">
+        <div class="section-grab-handle">Main Action Controls [Drag to Move]</div>
+        <div class="section-explanation">Click Record to start copying your mouse actions on the ticket page. Click Play to let the system repeat them automatically.</div>
+        <div class="buttons-row">
+          <button id="btn-record" class="btn-action btn-rec">Record Clicks</button>
+          <button id="btn-play" class="btn-action btn-play">Start Auto-Run</button>
+          <button id="btn-stop" class="btn-action btn-stop">Stop</button>
+        </div>
+        <div class="buttons-row" style="margin-top: 6px;">
+          <button id="btn-manual" class="btn-action" style="background: #7c3aed;">Pause and Pick Menu Option</button>
+          <button id="btn-rerecord" class="btn-action" style="background: var(--accent-orange);">Fix Single Step</button>
+          <button id="btn-clear-all" class="btn-action" style="background: #991b1b;">Delete All Steps</button>
+        </div>
+      </div>
+
+      <div class="movable-section-card" draggable="true" id="section-excel">
+        <div class="section-grab-handle">Copy and Paste Excel Rows Box [Drag to Move]</div>
+        <div class="section-explanation">Copy rows out of Excel and paste them here. The system reads the ticket number and remembers whether it should pick Agent Side or Caller Side.</div>
+        <textarea class="paste-textarea" id="txt-log-paste-input" placeholder="Paste spreadsheet row selections directly here..."></textarea>
+      </div>
+
+      <div class="movable-section-card" draggable="true" id="section-dropdowns">
+        <div style="display: flex; justify-content: space-between; align-items: center;" class="section-grab-handle">
+          <span>Allowed Category Dropdown Switcher [Drag to Move]</span>
+          <button id="btn-deselect-all-tree" style="background: var(--border-color); color: var(--text-main); border: none; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer;">Turn Off All</button>
+        </div>
+        <div class="section-explanation">Click on any group name below to see its individual options. Uncheck options to block the system from ever choosing them.</div>
+        <div class="range-tree-container" id="tree-root-categories"></div>
+      </div>
+
+      <div class="movable-section-card" draggable="true" id="section-speed">
+        <div class="section-grab-handle">Speed and Limit Controls [Drag to Move]</div>
+        <div class="section-explanation">Set how many tickets to close and how long the system should pause between actions to wait for the page to load.</div>
+        <div class="group">
+          <label>Maximum Ticket Runs Limit:</label>
+          <input type="number" id="cfg-max-runs" value="5">
+        </div>
+        <div class="group">
+          <label>Pause Time Between Actions (ms):</label>
+          <input type="number" id="cfg-step-pause" value="1500">
+        </div>
+        <div class="group">
+          <label>Pop-up Notice Timer (seconds):</label>
+          <input type="number" id="cfg-countdown" value="5">
+        </div>
+        <div class="group-checkbox">
+          <input type="checkbox" id="cfg-mute-alerts">
+          <label for="cfg-mute-alerts" style="cursor: pointer;">Hide Setup and Status Pop-up Boxes</label>
+        </div>
+      </div>
+
+      <div class="movable-section-card" draggable="true" id="section-sequence">
+        <div class="section-grab-handle">Recorded Action List Sequence [Drag to Move]</div>
+        <div class="section-explanation">These are the mouse clicks you recorded. You can duplicate a step to copy it, click the checkmark to turn it off, or adjust inputs.</div>
+        <div class="steps-container" id="steps-log">
+          <div style="color: var(--text-muted); text-align: center; margin-top: 40px;">No actions recorded yet.</div>
+        </div>
+      </div>
+
+      <div class="movable-section-card" draggable="true" id="section-history">
+        <div class="section-grab-handle">Finished Tickets History Log Ledger [Drag to Move]</div>
+        <div class="section-explanation">A simple saved record of processed ticket numbers, employee names, and the exact drop-down menu choices applied.</div>
+        <div class="audit-log-container" id="audit-history-log">
+          <div style="color: var(--text-muted); text-align: center; margin-top: 35px;">No tickets closed in this window session yet.</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="buttons-row" style="margin-top: 4px;">
+      <button id="btn-refresh-extension" class="btn-action" style="background: #0284c7; padding: 8px;">Synchronize Dropdowns and Refresh System</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: ACCOUNT UNLOCKER & PASSWORD CHANGER -->
+  <div class="tab-module-content-pane" id="pane-unlocker-module">
+    <!-- MATCHED MAIN ACTION CONTROLS FOR ACCOUNT UNLOCKER -->
+    <div class="movable-section-card">
+      <div style="font-weight: bold; color: var(--accent-blue); font-size: 12px; margin-bottom: 4px;">Main Action Controls</div>
+      <div class="section-explanation">Click Record Steps to capture screen inputs, or Launch Loop to start unlocking listed accounts.</div>
+      <div class="buttons-row">
+        <button id="btn-unlock-record" class="btn-action btn-rec">Record Steps</button>
+        <button id="btn-start-unlocking" class="btn-action btn-play">Launch Accounts Batch Process Loop</button>
+        <button id="btn-unlock-stop" class="btn-action btn-stop">Stop</button>
+      </div>
+      <div class="buttons-row" style="margin-top: 6px;">
+        <button id="btn-unlock-rerecord" class="btn-action" style="background: var(--accent-orange);">Fix Single Step</button>
+        <button id="btn-unlock-clear" class="btn-action" style="background: #991b1b;">Delete All Steps</button>
+      </div>
+    </div>
+
+    <div class="movable-section-card">
+      <div style="font-weight: bold; color: var(--accent-blue); font-size: 12px; margin-bottom: 4px;">Recorded Unlock Actions Sequence</div>
+      <div class="section-explanation">List of recorded clicks and inputs for the account unlock procedure:</div>
+      <div class="steps-container" id="unlock-steps-log">
+        <div style="color: var(--text-muted); text-align: center; margin-top: 40px;">No custom unlock actions recorded yet. System will use auto-HTML scan mode.</div>
+      </div>
+    </div>
+
+    <div class="movable-section-card">
+      <div style="font-weight: bold; color: var(--accent-blue); font-size: 12px; margin-bottom: 4px;">Target Account System IDs</div>
+      <div class="section-explanation">Paste account numbers (e.g. 3045, 4762028), OR leave blank to automatically scan all visible account links off the page!</div>
+      <textarea class="paste-textarea" id="txt-unlock-accounts-input" style="height: 100px;" placeholder="Example profile numbers input (or leave blank):&#10;3045&#10;4762028&#10;4762002"></textarea>
+    </div>
+
+    <div class="movable-section-card">
+      <div style="font-weight: bold; color: var(--accent-blue); font-size: 12px; margin-bottom: 4px;">Password Reset Mapping Preferences</div>
+      <div class="section-explanation">Choose whether to map passwords dynamically based on the owner profile read off the screen, or use a fixed global password string.</div>
+      
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="radio" id="strategy-username" name="pwd-strategy" value="username" checked style="accent-color: var(--accent-blue); cursor: pointer;">
+          <label for="strategy-username" style="cursor: pointer; font-weight: bold;">Scrape Dynamic Owner Target Field String</label>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="radio" id="strategy-global" name="pwd-strategy" value="global" style="accent-color: var(--accent-blue); cursor: pointer;">
+          <label for="strategy-global" style="cursor: pointer; font-weight: bold;">Use Fixed Global Password Key</label>
+        </div>
+        <input type="text" id="txt-global-password-value" placeholder="Type password entry string here..." style="width: 100%; display: none; box-sizing: border-box; margin-top: 4px;">
+      </div>
+    </div>
+
+    <div class="movable-section-card" style="background: var(--bg-input); border-color: var(--border-color);">
+      <div style="font-weight: bold; color: var(--accent-blue); font-size: 12px; margin-bottom: 4px;">Execution Process Monitor</div>
+      <div class="section-explanation">Tracks processing targets across active table entries.</div>
+      <div class="group">
+        <span>Active Grid Scanner Target:</span>
+        <span id="lbl-unlock-current-target" style="color: var(--accent-orange); font-weight: bold;">None</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>

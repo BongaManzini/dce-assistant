@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Smart Ticket Auto-Closer Pro (Beta)",
+  "version": "0.6.7.5",
+  "version_name": "0.6.7.5-beta",
+  "description": "Enterprise-grade preset, notes builder, and macro utility for Alteram CRM (Pre-v1.0 Release Candidate).",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.alteram.co.za/*",
+    "https://dcl.crmprod.alteram.co.za/*"
+  ],
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "action": {
+    "default_title": "Open Ticket Automator (Beta)"
+  },
+  "side_panel": {
+    "default_path": "panel/panel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.alteram.co.za/*",
+        "https://dcl.crmprod.alteram.co.za/*"
+      ],
+      "js": ["scripts/content_script.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["presets.json"],
+      "matches": [
+        "https://*.alteram.co.za/*",
+        "https://dcl.crmprod.alteram.co.za/*"
+      ]
+    }
+  ]
+}

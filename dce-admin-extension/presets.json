@@ -1,0 +1,102 @@
+{
+  "Locked Account (Failed Vetting)": {
+    "disposition": "Locked Account (Failed Vetting)",
+    "caseTitle": "LOCKED ACCOUNT",
+    "service": "UIF Normal",
+    "category": "UIF Online System",
+    "subCategory": "Access blocked",
+    "issues": "Inactive account {DUE TO FAILED VETTING}",
+    "caseStatus": "Resolved",
+    "notes_template": "QUERY: The caller is calling regarding their user profile being locked due to failed vetting on the portal.\nSTATUS: Profile verified on DCE. Account status confirmed inactive due to vetting failure.\nADVICE: Advised caller to submit clear copy of ID and proof of address to online support for verification and profile unlocking."
+  },
+  "Locked Account (Incorrect Password)": {
+    "disposition": "Locked Account (Incorrect Password)",
+    "caseTitle": "LOCKED ACCOUNT",
+    "service": "UIF Normal",
+    "category": "UIF Online System",
+    "subCategory": "Access blocked",
+    "issues": "Account Locked {PASSWORD RESET}",
+    "caseStatus": "Resolved",
+    "notes_template": "QUERY: Caller unable to access portal due to multiple incorrect password attempts.\nSTATUS: System shows account temporarily locked.\nADVICE: Initiated password reset link to caller's registered email address. Advised to wait 15 minutes before attempting login."
+  },
+  "Password Reset": {
+    "disposition": "Password Reset",
+    "caseTitle": "PASSWORD RESET",
+    "service": "UIF Normal",
+    "category": "UIF Online System",
+    "subCategory": "Access blocked",
+    "issues": "Account Locked {PASSWORD RESET}",
+    "caseStatus": "Resolved",
+    "notes_template": "QUERY: Caller requesting password reset assistance for UIF online portal.\nSTATUS: Registered credentials and email confirmed with caller.\nADVICE: Reset password procedure completed. Instructed caller to log in and update temporary credentials."
+  },
+  "Claim Follow Up (Within TAT)": {
+    "disposition": "Claim Follow Up (Within TAT)",
+    "caseTitle": "CLAIM ENQUIRY",
+    "service": "UIF Normal",
+    "category": "Claims Employee",
+    "subCategory": "Ordinary / Unemployment benefit",
+    "issues": "Claim Status",
+    "caseStatus": "Resolved",
+    "notes_template": "QUERY: Follow-up enquiry regarding Unemployment Benefit claim status.\nSTATUS: Claim submitted on [Insert Date]. Claim is currently under assessment and within the standard 15 working days turnaround time.\nADVICE: Informed client that claim is still within processing SLA. Advised to monitor SMS/email updates."
+  },
+  "Delayed Claim (Exceeded TAT)": {
+    "disposition": "Delayed Claim (Exceeded TAT)",
+    "caseTitle": "CLAIM ENQUIRY",
+    "service": "UIF Normal",
+    "category": "Claims Employee",
+    "subCategory": "Ordinary / Unemployment benefit",
+    "issues": "Claim Status",
+    "caseStatus": "Open",
+    "notes_template": "QUERY: Follow up on Ordinary Benefit claim submitted on [Insert Date] that has exceeded the standard turnaround time.\nSTATUS: Claim exceeds standard processing timeline.\nADVICE: Escalated claim to processing supervisor for manual assessment. Provided reference number."
+  },
+  "Payment Query (Within TAT)": {
+    "disposition": "Payment Query (Within TAT)",
+    "caseTitle": "PAYMENT QUERY",
+    "service": "UIF Normal",
+    "category": "Payments - Employee",
+    "subCategory": "Payment Enquiry benefit",
+    "issues": "Request For Payment",
+    "caseStatus": "Resolved",
+    "notes_template": "QUERY: Caller enquiring regarding payment status following submission of Request for Payment (RFP).\nSTATUS: RFP submitted on [Insert Date]. Processing is within standard turnaround timeframe.\nADVICE: Advised caller payment will disburse within 7-10 working days upon approval."
+  },
+  "Delayed Payment (Exceeded TAT)": {
+    "disposition": "Delayed Payment (Exceeded TAT)",
+    "caseTitle": "PAYMENT QUERY",
+    "service": "UIF Normal",
+    "category": "Payments - Employee",
+    "subCategory": "Payment Enquiry",
+    "issues": "Payment status",
+    "caseStatus": "Open",
+    "notes_template": "QUERY: Caller enquiring on outstanding payment exceeding processing SLA after approval.\nSTATUS: Payment marked approved on system but remittance unconfirmed.\nADVICE: Ticket forwarded to finance/disbursement team for manual payment release."
+  },
+  "Checking Credit Days": {
+    "disposition": "Checking Credit Days",
+    "caseTitle": "CREDIT DAYS CHECK",
+    "service": "UIF Normal",
+    "category": "Payments - Employee",
+    "subCategory": "Payment Enquiry payment credit days",
+    "issues": "remaining payment days",
+    "caseStatus": "Resolved",
+    "notes_template": "QUERY: Caller enquiring about remaining payment credit days available on their profile.\nSTATUS: System confirms caller has [number] credit days remaining.\nADVICE: Explained calculation of credit days and timeline to submit next RFP."
+  },
+  "Compliance Certificate": {
+    "disposition": "Compliance Certificate",
+    "caseTitle": "COMPLIANCE CERTIFICATE",
+    "service": "UIF Normal",
+    "category": "Complaince - Commercial employer",
+    "subCategory": "Compliance certificate",
+    "issues": "Issuing of a certificate",
+    "caseStatus": "Resolved",
+    "notes_template": "QUERY: Employer enquiring about issuing of a UIF Compliance Certificate.\nSTATUS: Employer contributions and declarations verified up to date.\nADVICE: Guided employer on how to generate and download certificate via the online portal."
+  },
+  "Language Barrier": {
+    "disposition": "Language Barrier",
+    "caseTitle": "LANGUAGE BARRIER",
+    "service": "UIF Normal",
+    "category": "Language Barrier",
+    "subCategory": "Language Barrier",
+    "issues": "Language Barrier call back",
+    "caseStatus": "Open",
+    "notes_template": "QUERY: Inbound caller experienced communication barrier.\nSTATUS: Preferred language requested: [LANGUAGE].\nADVICE: Call logged for immediate call back by an agent fluent in the requested language."
+  }
+}

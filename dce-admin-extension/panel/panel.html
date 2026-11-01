@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --bg-main: #0b1d16;
+      --bg-card: #0f2d22;
+      --bg-chip: #112d21;
+      --border-accent: #107c41;
+      --text-main: #e2e8f0;
+      --accent-color: #00ebc7;
+      --highlight: #38bdf8;
+      --muted: #94a3b8;
+    }
+
+    body {
+      margin: 0;
+      padding: 10px;
+      background: var(--bg-main); 
+      color: var(--text-main); 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      font-size: 11.5px;
+    }
+    .header {
+      font-weight: bold; 
+      margin-bottom: 8px; 
+      border-bottom: 1px solid var(--border-accent); 
+      padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-badge {
+      background: #7c2d12;
+      color: #fed7aa;
+      border: 1px solid #c2410c;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 8.5px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #64748b;
+      display: inline-block;
+      box-shadow: 0 0 6px rgba(100, 116, 139, 0.5);
+    }
+    .section-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-accent);
+      border-radius: 6px;
+      padding: 7px;
+      margin-bottom: 7px;
+    }
+    .section-title {
+      font-weight: bold;
+      color: var(--accent-color);
+      margin-bottom: 5px;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chip-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .btn-chip {
+      background: var(--bg-chip);
+      border: 1px solid var(--border-accent);
+      color: var(--text-main);
+      padding: 5px 6px;
+      border-radius: 4px;
+      font-size: 9.5px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    .btn-chip:hover {
+      background: var(--border-accent);
+      color: white;
+    }
+    .reminder-banner {
+      background: #78350f;
+      color: #fef3c7;
+      border: 1px solid #b45309;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 10px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .notes-textarea {
+      width: 100%;
+      height: 75px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-accent);
+      border-radius: 4px;
+      color: var(--highlight);
+      font-family: monospace;
+      font-size: 10.5px;
+      padding: 6px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .counter-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 3px;
+      margin-bottom: 4px;
+    }
+    .date-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    input[type="date"], select.dropdown, input[type="text"].dropdown {
+      background: var(--bg-chip);
+      color: var(--text-main);
+      border: 1px solid var(--border-accent);
+      border-radius: 4px;
+      padding: 4px;
+      outline: none;
+      box-sizing: border-box;
+      font-size: 10.5px;
+    }
+    input[type="date"] {
+      color-scheme: dark;
+      flex: 1;
+    }
+    .steps-container {
+      background: var(--bg-main);
+      border: 1px solid var(--border-accent);
+      border-radius: 5px;
+      max-height: 105px;
+      overflow-y: auto;
+      padding: 4px;
+      margin-top: 4px;
+      font-family: monospace;
+      font-size: 10px;
+    }
+    .step-item {
+      padding: 3px 5px;
+      border-bottom: 1px solid var(--border-accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      margin-bottom: 2px;
+      border-radius: 3px;
+    }
+    .step-del-btn {
+      background: transparent;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 0 4px;
+    }
+    .buttons-row {
+      display: flex;
+      gap: 4px;
+      margin-top: 5px;
+    }
+    button.btn-action {
+      flex: 1;
+      padding: 5px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      font-size: 10px;
+      transition: opacity 0.2s ease;
+    }
+    button.btn-action:hover { opacity: 0.9; }
+    .btn-copy { background-color: #0284c7; }
+    .btn-paste-dce { background-color: #7c3aed; }
+    .btn-clear { background-color: #991b1b; }
+    .btn-play { background-color: #107c41; }
+    .btn-stop { background-color: #475569; }
+    .btn-rec { background-color: #dc2626; }
+    .btn-secondary { background-color: var(--bg-chip); border: 1px solid var(--border-accent); }
+
+    /* Modal for Creating New Preset */
+    #modal-add-preset {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(11, 29, 22, 0.85);
+      z-index: 999999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-accent);
+      border-radius: 6px;
+      padding: 12px;
+      width: 90%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .modal-card input, .modal-card textarea {
+      width: 100%;
+      background: var(--bg-main);
+      color: var(--text-main);
+      border: 1px solid var(--border-accent);
+      border-radius: 4px;
+      padding: 5px;
+      margin-bottom: 6px;
+      box-sizing: border-box;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span>DCE Master Automator</span>
+      <span class="header-badge">ADMIN / TL BUILD</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span id="recording-pill" style="display: none; font-size: 9px; color: #ef4444; font-weight: bold;">🔴 REC</span>
+      <span id="status-dot" class="status-dot"></span>
+    </div>
+  </div>
+
+  <!-- Caller Disposition / Probing Matrix -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>1-Tap Probing Matrix (Automated Header + Notes)</span>
+      <span id="lbl-query-count" style="color: var(--highlight); font-size: 9.5px;">Ready</span>
+    </div>
+    <div class="chip-grid" id="disposition-chips"></div>
+  </div>
+
+  <div class="reminder-banner">
+    <span>📍 Reminder: Remember to select Province & Labour Centre!</span>
+  </div>
+
+  <!-- Call Notes Staging Area -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>Call Notes Staging Area</span>
+      <span id="copy-feedback" style="color: #4ade80; font-size: 10px; display: none;">Copied!</span>
+    </div>
+
+    <div class="date-row">
+      <input type="date" id="rfp-calendar-input">
+      <button id="btn-insert-date" class="btn-action" style="flex: 0 0 85px; background: #0d9488;">Set RFP Date</button>
+      <button id="btn-today-date" class="btn-action" style="flex: 0 0 50px; background: #334155;">Today</button>
+    </div>
+
+    <textarea id="txt-call-notes" class="notes-textarea" placeholder="Auto-generated notes appear here..."></textarea>
+    
+    <div class="counter-bar">
+      <span id="lbl-chars-count">0 characters</span>
+      <span id="lbl-words-count">0 words</span>
+    </div>
+
+    <div class="buttons-row">
+      <button id="btn-copy-notes" class="btn-action btn-copy">📋 Copy</button>
+      <button id="btn-paste-to-dce" class="btn-action btn-paste-dce">📥 Paste to DCE</button>
+      <button id="btn-clear-notes" class="btn-action btn-clear" style="flex: 0 0 50px;">Clear</button>
+    </div>
+  </div>
+
+  <!-- Admin Macro Step Studio -->
+  <div class="section-box">
+    <div class="section-title">
+      <span>Profile Step Studio (Admin / TL)</span>
+      <button id="btn-show-add-preset" style="background: transparent; border: 1px solid var(--accent-color); color: var(--accent-color); border-radius: 3px; font-size: 9.5px; padding: 1px 6px; cursor: pointer;">
+        ➕ Add New Preset
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+      <select id="preset-select" class="dropdown" style="flex: 1;"></select>
+      <button id="btn-clear-profile-steps" class="btn-action btn-clear" style="flex: 0 0 45px;" title="Clear steps for this profile">Clear</button>
+    </div>
+
+    <div class="steps-container" id="steps-log"></div>
+
+    <div class="buttons-row">
+      <button id="btn-record" class="btn-action btn-rec">🔴 Record Steps</button>
+      <button id="btn-play" class="btn-action btn-play">▶ Test Replay</button>
+      <button id="btn-stop" class="btn-action btn-stop">⏹ Stop</button>
+    </div>
+  </div>
+
+  <!-- Admin Export / Import Package -->
+  <div class="buttons-row">
+    <button id="btn-export-profiles" class="btn-action btn-secondary" style="background: #0284c7; border-color: #38bdf8;">
+      💾 Export Master JSON
+    </button>
+    <label class="btn-action btn-secondary" style="flex: 1; text-align: center; display: inline-block; cursor: pointer; padding-top: 5px;">
+      📂 Import Master JSON
+      <input type="file" id="input-import-profiles" accept=".json" style="display: none;">
+    </label>
+  </div>
+
+  <!-- Modal for Creating New Custom Preset -->
+  <div id="modal-add-preset">
+    <div class="modal-card">
+      <div style="font-weight: bold; color: var(--accent-color); margin-bottom: 8px;">Create New Preset</div>
+      
+      <div style="font-size: 9.5px; color: var(--muted);">Preset Name (e.g. De-registration Inquiry):</div>
+      <input type="text" id="new-preset-name" placeholder="Preset Name">
+
+      <div style="font-size: 9.5px; color: var(--muted);">Case Title (e.g. DE-REGISTRATION):</div>
+      <input type="text" id="new-preset-title" placeholder="CASE TITLE">
+
+      <div style="font-size: 9.5px; color: var(--muted);">Notes Template:</div>
+      <textarea id="new-preset-notes" rows="4" placeholder="QUERY: ...&#10;STATUS: ...&#10;ADVICE: ..."></textarea>
+
+      <div class="buttons-row">
+        <button id="btn-cancel-preset" class="btn-action btn-stop">Cancel</button>
+        <button id="btn-save-preset" class="btn-action btn-play">Save Preset</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>

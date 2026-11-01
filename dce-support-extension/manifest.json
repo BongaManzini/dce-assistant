@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "IT Support Tools Hub",
+  "version": "4.3",
+  "description": "Integrated automation workspace tools for ticket dispatching and service configuration channels.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://servicedesk.alteram.co.za/*",
+    "https://portal422.telviva.com/*",
+    "http://portal422.telviva.com/*"
+  ],
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "action": {
+    "default_title": "Open IT Support Workspace"
+  },
+  "side_panel": {
+    "default_path": "panel/panel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://servicedesk.alteram.co.za/*",
+        "https://portal422.telviva.com/*",
+        "http://portal422.telviva.com/*"
+      ],
+      "js": ["scripts/content_script.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
